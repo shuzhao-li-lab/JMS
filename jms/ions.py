@@ -14,5 +14,16 @@ Out[5]:
 
 from mass2chem.formula import compute_adducts_formulae
 
-
+def generate_ion_signature(mw, neutral_formula,  mode='pos', primary_only=True):
+    '''
+    Extend mass2chem.formula.compute_adducts_formulae by C13.
+    Note - Resulting chemical formula is not computable.
+    '''
+    adducts = compute_adducts_formulae(mw, neutral_formula,  mode, primary_only)
+    C13 = []
+    for A in adducts:
+        C13.append([
+            A[0]+1.003355, A[1]+',C13', A[2]+',(C13)'
+        ])
+    return adducts + C13
 

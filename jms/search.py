@@ -1,4 +1,5 @@
 '''
+
 Following tools in mass2chem.
 
 tree = build_centurion_tree(list_peaks)
@@ -20,6 +21,11 @@ Out[17]:
   'goodness_fitting': '0.7678341743874929',
   'snr': '3'}]
 
+
+Handling degenerate peaks in experimental data vs theoretical compounds 
+involves two opposite problems.
+We are not using the identical set of isotopes and ions yet -
+they have different computational complexities, and it's not clear that we should. 
 
 '''
 isotopic_patterns = [
@@ -67,7 +73,6 @@ extended_adducts = {
     'pos': [],
     'neg': [],
 }
-
 
 
 #
@@ -151,7 +156,7 @@ def find_best_match_centurion_indexed_list(query_mz, mz_centurion_tree, limit_pp
 
 def is_coeluted(P1, P2, rt_tolerance=10):
     '''
-    coelution is defined by verlap more than half of the smaller peak, or apexes within rt_tolerance.
+    coelution is defined by overlap more than half of the smaller peak, or apexes within rt_tolerance.
     
     Example peak format: {'parent_masstrace_id': 1670, 'mz': 133.09702315984987, 'apex': 654, 'height': 14388.0,
     'left_base': 648, 'right_base': 655, 'id_number': 555}
@@ -211,7 +216,6 @@ def find_isotopic_signatures(list_peaks, mztree, isotopic_patterns, mz_tolerance
             signatures.append(matched)
 
     return signatures
-
 
 
 def find_adduct_signatures(list_peaks, mztree, adduct_patterns, mz_tolerance_ppm=5):

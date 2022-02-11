@@ -12,7 +12,7 @@ and we encourage reuse and community contributions.
 A few examples:
 
 ```
-# A LC-MS peak
+# A LC-MS peak:
 {
     'id_number': 555,
     'mz': 133.0970, 
@@ -20,6 +20,23 @@ A few examples:
     'height': 14388.0, 
     'left_base': 648, 
     'right_base': 655, 
+}
+
+# A compound (i.e. metabolite):
+{
+    'primary_id': HMDB0000195,
+    'primary_db': 'HMDB',
+    'name': 'Inosine',
+    "neutral_formula": C10H12N4O5,
+    "neutral_formula_mass": 268.08077, 
+    'SMILES': 'OC[C@H]1O[C@H]([C@H](O)[C@@H]1O)N1C=NC2=C(O)N=CN=C12', 
+    'inchikey': 'UGQMRVRMYYASKQ-KQYNXXCUSA-N',
+    'LogP': -2.10,
+    'other_ids': {'PubChem': '6021',
+                  'KEGG': 'C00294',
+                  'ChEBI': '17596',
+                  'MetaNetX': 'MNXM1103335',
+                  },
 }
 
 # An empirical compound:
@@ -44,6 +61,10 @@ A few examples:
     "Database_referred": ["Azimuth", "HMDB", "MONA"],
 }
 ```
+
+These examples show a core set of attributes. 
+Users can extend to include other attributes that meet their own project needs.
+With consistent core concepts, some simple mapping dictionaries will produce interoperability between projects. 
 
 The App Engine web tool is in a different repository.
 
