@@ -119,8 +119,8 @@ class knownCompoundDatabase:
         for k,v in _db.items():
             self.mass_indexed_compounds[k] = {
                     "interim_id": k,
-                    "neutral_formula": v[0][2],
-                    "neutral_formula_mass": float(v[0][3]),
+                    "neutral_formula": v[0]['neutral_formula'],
+                    "neutral_formula_mass": float(v[0]['neutral_formula_mass']),
                     "compounds": v,
                 }
 
@@ -150,20 +150,20 @@ class knownCompoundDatabase:
                 neg_peak_list.append( {'mz': ion[0], 'parent_epd_id': k, 'ion_relation': ion[1],} )
 
         # map peaks -> empCpd
-        self.mz_centurion_tree['pos'] = build_centurion_tree(pos_peak_list)
-        self.mz_centurion_tree['neg'] = build_centurion_tree(neg_peak_list)
+        self.emp_cpds_trees['pos'] = build_centurion_tree(pos_peak_list)
+        self.emp_cpds_trees['neg'] = build_centurion_tree(neg_peak_list)
 
     def search_mz_single(self, query_mz, mode='pos', mz_tolerance_ppm=5):
         '''
         return list of matched empCpds
         '''
-        return find_all_matches_centurion_indexed_list(query_mz, self.mz_centurion_tree[mode], mz_tolerance_ppm)
+        return find_all_matches_centurion_indexed_list(query_mz, self.emp_cpds_trees[mode], mz_tolerance_ppm)
 
     def search_mz_batch(self, query_mz_list, mode='pos', mz_tolerance_ppm=5):
         results = []
         for query_mz in query_mz_list:
             results.append(
-                self.search_mz_single(query_mz, self.mz_centurion_tree[mode], mz_tolerance_ppm)
+                self.search_mz_single(query_mz, mode, mz_tolerance_ppm)
             )
         return results
 
@@ -178,7 +178,7 @@ class knownCompoundDatabase:
         results = []
         for emp_cpd in list_emp_cpd:
             results.append(
-                self.search_emp_cpd_single(emp_cpd, self.mz_centurion_tree, mz_tolerance_ppm)
+                self.search_emp_cpd_single(emp_cpd, self.emp_cpds_trees, mz_tolerance_ppm)
             )
         return results
 
@@ -218,7 +218,7 @@ class ExperimentalEcpdDatabase:
 
 
 
-        self.mz_centurion_tree = build_centurion_tree(self.peak_list)
+        self.emp_cpds_trees = build_centurion_tree(self.peak_list)
 
 
 
@@ -232,7 +232,7 @@ class ExperimentalEcpdDatabase:
         results = []
         for cpd in list_cpd:
             results.append(
-                self.search_emp_cpd_single(cpd, self.mz_centurion_tree, mz_tolerance_ppm)
+                self.search_emp_cpd_single(cpd, self.emp_cpds_trees, mz_tolerance_ppm)
             )
         return results
 
