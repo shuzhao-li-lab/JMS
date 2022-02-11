@@ -154,6 +154,9 @@ class knownCompoundDatabase:
         self.mz_centurion_tree['neg'] = build_centurion_tree(neg_peak_list)
 
     def search_mz_single(self, query_mz, mode='pos', mz_tolerance_ppm=5):
+        '''
+        return list of matched empCpds
+        '''
         return find_all_matches_centurion_indexed_list(query_mz, self.mz_centurion_tree[mode], mz_tolerance_ppm)
 
     def search_mz_batch(self, query_mz_list, mode='pos', mz_tolerance_ppm=5):
@@ -166,12 +169,12 @@ class knownCompoundDatabase:
 
 
 
-    def search_emp_cpd_single(self, emp_cpd, mz_tolerance_ppm=5):
+    def search_emp_cpd_single(self, emp_cpd, mode='pos', mz_tolerance_ppm=5):
         pass
 
 
 
-    def search_emp_cpd_batch(self, list_emp_cpd, mz_tolerance_ppm=5):
+    def search_emp_cpd_batch(self, list_emp_cpd, mode='pos', mz_tolerance_ppm=5):
         results = []
         for emp_cpd in list_emp_cpd:
             results.append(

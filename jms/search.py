@@ -265,10 +265,6 @@ def find_mzdiff_pairs_from_masstracks(list_mass_tracks, list_mz_diff=[1.003355, 
 
 
 
-
-
-
-
 def search_emp_cpds(L1, L2):
     pass
 
@@ -276,3 +272,59 @@ def search_emp_cpds(L1, L2):
 
 
 
+#------------------------------------------------------------------------------------------------------------------------------
+# From asari.mass_functions
+
+def mass_paired_mapping(list1, list2, std_ppm=5):
+    '''
+    To find unambiguous matches of m/z values between two lists.
+    This sorts all m/z values first, then compare their differences in sequential neighbors.
+    To be considered as an unambiguous match, the m/z values from two lists 
+    should have no overlap neighbors in either direction in either list other than their own pair.
+    Not necessary to have full mapping. FeatureMap is done in multiple steps. This is step 1.
+    This shares some similarity to the RANSAC algorithm but prioritizes selectivity.
+    For illustration, one can use one-step Gaussian model for mass shift.
+    Since only mean shift is used here, and stdev is implicitly enforced in matching, no need to do model fitting.
+    Input
+    =====
+    Two lists of m/z values, not ncessarily same length.
+    std_ppm: instrument accuracy to guide value matching. Low-selectiviy values are not considered in matching.
+    Return
+    ======
+    mapped: mapping list [(index from list1, index from list2), ...]
+    ratio_deltas: mean m/z ratio shift between two lists. This is ppm*10^-6. No need to convert btw ppm here.
+    Test
+    ====
+    list1 = [101.0596, 101.061, 101.0708, 101.0708, 101.1072, 101.1072, 101.1072, 102.0337, 102.0337, 102.0548, 102.0661, 102.0912, 102.0912, 102.1276, 102.1276, 103.0501, 103.0501, 103.0541, 103.0865, 103.0865, 103.9554, 104.0368, 104.0705, 104.0705, 104.1069, 104.1069, 104.9922, 105.0422, 105.0698, 105.0698, 105.0738, 105.1039, 105.1102, 105.9955, 106.0497, 106.065, 106.065, 106.0683, 106.0683, 106.0861, 106.0861, 106.0861, 106.1111, 106.9964, 107.0475, 107.0602, 107.0653, 107.0895, 107.9667, 108.0443, 108.0555, 108.0807, 109.0632, 109.0759]
+    list2 = [101.0087, 101.035, 101.0601, 101.0601, 101.0601, 101.0601, 101.0713, 101.0714, 101.1077, 101.1077, 101.1077, 101.1077, 101.1077, 101.1158, 101.1158, 102.0286, 102.0376, 102.0468, 102.0539, 102.0554, 102.0554, 102.0554, 102.0554, 102.0666, 102.0917, 102.0917, 102.0917, 102.0918, 102.1281, 102.1281, 102.1282, 103.0394, 103.0505, 103.0507, 103.0547, 103.1233, 103.8162, 103.956, 103.956, 103.956, 104.0532, 104.0533, 104.0641, 104.0709, 104.071, 104.0831, 104.0878, 104.0895, 104.0953, 104.1073, 104.1073, 104.1074, 104.1074, 104.1182, 104.1199, 104.1265, 104.1318, 104.1354, 104.1725, 104.3998, 104.9927, 104.9927, 104.9927, 104.9927, 105.0654, 105.0703, 105.1043, 105.1133, 106.049, 106.0503, 106.0655, 106.0688, 106.0866, 106.0867, 106.0867, 106.0867, 106.114, 107.048, 107.0481, 107.0496, 107.0608, 107.0658, 108.0109, 108.0482, 108.0604, 108.0812, 108.0812, 108.9618, 109.0507, 109.0637, 109.0637, 109.0764, 109.1015]
+    mass_paired_mapping(list1, list2) >>>
+        ([(10, 23), (29, 65), (31, 66), (36, 70), (38, 71), (46, 81), (53, 91)],
+        [4.898762180656323e-06,
+        4.758718686464085e-06,
+        3.805743437700149e-06,
+        4.714068193732999e-06,
+        4.713921530199148e-06,
+        4.670025348919892e-06,
+        4.583942997773922e-06])
+    '''
+    all = [(list1[ii], 1, ii) for ii in range(len(list1))] + [(list2[jj], 2, jj) for jj in range(len(list2))]
+    # [(mz, list_origin, index_origin), ...]
+    all.sort()
+    NN = len(all)
+    # Add a mock entry to allow loop goes through NN.
+    all.append((999999, 2, None))
+    mapped, ratio_deltas = [], []
+    for ii in range(1, NN):
+        if all[ii][1] != all[ii-1][1]:          # from two diff list_origin
+            _tolerance = all[ii][0] * std_ppm * 0.000001
+            _d = all[ii][0]-all[ii-1][0]
+            if _d < _tolerance and all[ii+1][0]-all[ii][0] > _tolerance:
+                # not allowing ii to be matched to both ii-1 and ii+1
+                if all[ii][1] > all[ii-1][1]:   # always ordered as list1, list2
+                    mapped.append( (all[ii-1][2], all[ii][2]) )
+                    ratio_deltas.append( _d/all[ii][0] )
+                else:
+                    mapped.append( (all[ii][2], all[ii-1][2]) )
+                    ratio_deltas.append( -_d/all[ii][0] )
+
+    return mapped, ratio_deltas
