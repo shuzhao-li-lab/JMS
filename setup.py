@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
   name='jms-metabolite-services',
-  version='0.1.2',
+  version='0.1.5',
 
   author='Shuzhao Li',
   author_email='shuzhao.li@gmail.com',

@@ -78,8 +78,7 @@ class knownCompoundDatabase:
     '''
     def __init__(self):
         '''
-                self.centurion_mass_tree = {}
-                self.list_emp_cpds = []
+
         '''
         self.mass_indexed_compounds = {}
         self.emp_cpds_trees = { 'pos': {}, 'neg': {} }           # separately for positive and negative ion modes
@@ -188,7 +187,6 @@ class knownCompoundDatabase:
 
 
 
-
 class ExperimentalEcpdDatabase:
     '''
     Build a boutique data store for user's experimental data, input being list of peaks or empCpds (i.e. emp_cpd).
@@ -201,25 +199,89 @@ class ExperimentalEcpdDatabase:
         '''
         self.mode = mode
         self.list_peaks = []
-        self.empCpds = []
+        self.indexed_peaks = {}
+        self.dict_empCpds = {}
+        self.indexed_empCpds = {}
 
     def build_from_list_peaks(self, list_peaks):
+        self.list_peaks = list_peaks
         ECCON = epdsConstructor(list_peaks, mode=self.mode)
         list_empCpds = ECCON.peaks_to_epds()
-        # list_empCpds = self._reformat_epds_(list_empCpds, self.CMAP.FeatureList)
-        self.empCpds = list_empCpds
-        self.build_cpds_index()
+        self.dict_empCpds = self.index_reformat_epds(list_empCpds, list_peaks)
+        self.index_empCpds()
 
     def build_from_list_empCpds(self, list_empCpds):
-        self.empCpds = list_empCpds
-        self.build_cpds_index()
+        for E in list_empCpds:
+            self.dict_empCpds[E['interim_id']] = E
+        self.index_empCpds()
 
-    def build_cpds_index(self):
+    def index_empCpds(self):
+        '''
+        Build indices for self.list_peaks and self.empCpds.
+        '''
+        self.indexed_peaks  = build_centurion_tree(self.list_peaks)
+        __PL = []
+        for _, epd in self.dict_empCpds.items():
+            peaks = epd['MS1_pseudo_Spectra']
+            for P in peaks:
+                P['parent_epd_id'] = epd['interim_id']
+                __PL.append( P )
+        self.indexed_empCpds = build_centurion_tree(__PL)
 
+    def index_reformat_epds(self, list_empCpds, FeatureList):
+        fDict = {}
+        for F in FeatureList:
+            fDict[F['id_number']] = F
+        new = {}
+        for E in list_empCpds:
+            features = []
+            for peak in E['list_peaks']:
+                features.append(
+                    {'feature_id': peak[0], 
+                    'mz': fDict[peak[0]]['mz'], 
+                    'rtime': fDict[peak[0]]['apex'], 
+                    'charged_formula': '', 
+                    'ion_relation': peak[1]}
+                )
+            new[E['id']] = {
+                'interim_id': E['id'], 
+                'neutral_formula_mass': None,
+                'neutral_formula': None,
+                'Database_referred': [],
+                'identity': [],
+                'MS1_pseudo_Spectra': features,
+                'MS2_Spectra': [],
+                }
 
+        return new
 
-        self.emp_cpds_trees = build_centurion_tree(self.peak_list)
+    def search_peaks_mz_single(self, query_mz, mz_tolerance_ppm=5):
+        '''
+        return list of matched peaks
+        '''
+        return find_all_matches_centurion_indexed_list(query_mz, self.indexed_peaks, mz_tolerance_ppm)
 
+    def earch_peaks_mz_batch(self, query_mz_list, mz_tolerance_ppm=5):
+        results = []
+        for query_mz in query_mz_list:
+            results.append(
+                self.search_peaks_mz_single(query_mz, mz_tolerance_ppm)
+            )
+        return results
+
+    def search_empCpds_mz_single(self, query_mz, mz_tolerance_ppm=5):
+        '''
+        return list of matched empCpds
+        '''
+        return find_all_matches_centurion_indexed_list(query_mz, self.indexed_empCpds, mz_tolerance_ppm)
+
+    def search_empCpds_mz_batch(self, query_mz_list, mz_tolerance_ppm=5):
+        results = []
+        for query_mz in query_mz_list:
+            results.append(
+                self.search_empCpds_mz_single(query_mz, mz_tolerance_ppm)
+            )
+        return results
 
 
 

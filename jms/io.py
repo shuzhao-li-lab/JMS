@@ -53,8 +53,8 @@ def read_table_to_peaks(infile, delimiter='\t'):
         a = line.rstrip().split(delimiter)
         list_peaks.append(
             {'id_number': a[13], 'mz': float(a[2]), 
-            'apex': a[3], 'height': a[5], 
-            'cSelectivity': a[10], 'goodness_fitting': a[11], 'snr': a[12], }
+            'apex': float(a[3]), 'height': float(a[5]), 
+            'cSelectivity': float(a[10]), 'goodness_fitting': float(a[11]), 'snr': float(a[12]), }
         )
 
     print(len(list_peaks))
