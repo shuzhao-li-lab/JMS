@@ -71,8 +71,33 @@ The App Engine web tool is in a different repository.
 How to use
 ==========
 
-to come.
+See notebooks under docs/ for demostration.
 
+Example code of running wrapper function:
+
+```
+import json
+from jms.dbStructures import annotate_peaks_against_kcds
+
+def read_table_to_peaks(infile, delimiter='\t'):
+    list_peaks = []
+    w = open(infile).readlines()
+    for line in w[1:]:
+        a = line.rstrip().split(delimiter)
+        list_peaks.append(
+            {'id_number': a[13], 'mz': float(a[2]), 
+            'apex': float(a[3]), 'height': float(a[5]), 
+            'cSelectivity': float(a[10]), 'goodness_fitting': float(a[11]), 'snr': float(a[12]), }
+        )
+    return list_peaks
+
+list_compounds = json.load(open('jms/data/compounds/list_compounds_HMDB4.json'))
+ipsc = read_table_to_peaks('pos_cmap_feature_table.csv', ',')
+
+annotate_peaks_against_kcds(ipsc, list_compounds, 
+                                export_file_name_prefix='jms_annotated_',
+                                mode='pos',  mz_tolerance_ppm=5)
+```
 
 Related libraries and tools
 ===========================

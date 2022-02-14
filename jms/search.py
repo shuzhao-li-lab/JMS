@@ -262,14 +262,10 @@ def find_mzdiff_pairs_from_masstracks(list_mass_tracks, list_mz_diff=[1.003355, 
 
     return pairs
 
-
-
-
-def search_emp_cpds(L1, L2):
-    pass
-
-
-
+def score_emp_cpd_matches(L1_peaks, L2_peaks, ppm):
+    '''Return number of matched peaks
+    '''
+    return len(mass_paired_mapping(L1_peaks, L2_peaks, ppm)[0])
 
 
 #------------------------------------------------------------------------------------------------------------------------------
