@@ -432,7 +432,7 @@ class ExperimentalEcpdDatabase:
         '''
         resultDict = {}
         for epd in self.dict_empCpds.values():
-            resultDict[epd['interim_id']] = KCD.search_emp_cpd_single(epd)
+            resultDict[epd['interim_id']] = KCD.search_emp_cpd_single(epd, self.mode)
         return resultDict
 
     def choose_top_epd(list_KCD_matches):
