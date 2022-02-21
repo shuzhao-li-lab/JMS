@@ -258,9 +258,10 @@ class knownCompoundDatabase:
         # format - [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}, ...]
         for _M in matches:
             R = self.mass_indexed_compounds[_M['parent_epd_id']]
+            # compute_adducts_formulae considers both isotopes and adducts
             db_peaks = compute_adducts_formulae(R['neutral_formula_mass'], R['neutral_formula'], mode)
             results.append((_M['parent_epd_id'],
-                            _M['ion_relation'],
+                            _M['ion_relation'],     # ion_relation btw anchor and DB record, not ions in empCpd
                             score_emp_cpd_matches(query_mzs, [x[0] for x in db_peaks], mz_tolerance_ppm), 
                     ))
         return sorted(results, key=itemgetter(2), reverse=True)
@@ -303,6 +304,7 @@ class ExperimentalEcpdDatabase:
         self.dict_empCpds = {}
         self.indexed_empCpds = {}
         self.peak_to_empCpd = {}
+        self.peak_to_empCpd_ion_relation = {}
 
     def build_from_list_peaks(self, list_peaks):
         '''
@@ -318,9 +320,7 @@ class ExperimentalEcpdDatabase:
         self.list_peaks = list_peaks
         ECCON = epdsConstructor(list_peaks, mode=self.mode)
 
-        list_empCpds = ECCON.peaks_to_epds()        # exclude_singletons=False)
-        # updating epdsConstructor to handle singletons - done
-
+        list_empCpds = ECCON.peaks_to_epds()
         self.dict_empCpds = self.index_reformat_epds(list_empCpds, list_peaks)
         self.index_empCpds()
 
@@ -332,6 +332,9 @@ class ExperimentalEcpdDatabase:
     def index_empCpds(self):
         '''
         Build indices for self.list_peaks and self.empCpds.
+        Minor possibility that peak:empCpd is not N:1.
+
+
         '''
         self.indexed_peaks  = build_centurion_tree(self.list_peaks)
         __PL = []
@@ -339,7 +342,8 @@ class ExperimentalEcpdDatabase:
             peaks = epd['MS1_pseudo_Spectra']
             for P in peaks:
                 self.peak_to_empCpd[P['feature_id']] = interim_id
-                P['parent_epd_id'] = epd['interim_id']
+                self.peak_to_empCpd_ion_relation[P['feature_id']] = P['ion_relation']
+                P['parent_epd_id'] = epd['interim_id'] 
                 __PL.append( P )
 
         self.indexed_empCpds = build_centurion_tree(__PL)
@@ -422,18 +426,58 @@ class ExperimentalEcpdDatabase:
             )
         return results
 
-    def annotate_against_KCD(self, KCD):
+    def annotate_empCpds_against_KCD(self, KCD):
         '''
         Get all empCpd matches between this experimental dataset and a known compound database.
         KCD: knownCompoundDatabase instance.
         >>> KCD.search_emp_cpd_single( EED.dict_empCpds[15] )
         [('C6H14N_100.112624', 'M[1+]', 2), ('C6H13N_99.104799', 'M+H[1+]', 2)]
-
         '''
         resultDict = {}
         for epd in self.dict_empCpds.values():
             resultDict[epd['interim_id']] = KCD.search_emp_cpd_single(epd, self.mode)
         return resultDict
+
+    def annotate_all_against_KCD(self, KCD):
+        '''
+        Get matches of both empCpds and singleton peaks.
+        KCD: knownCompoundDatabase instance.
+        return: peak_result_dict, epd_search_result_dict
+        '''
+        peak_result_dict = {}
+        epd_search_result_dict = self.annotate_empCpds_against_KCD(KCD)
+        for peak in self.list_peaks:
+            ii, mz, apex = peak['id_number'], peak['mz'], peak['apex']
+            matched_DB_shorts, matched_DB_records = '', ''
+            interim_id = self.peak_to_empCpd.get(ii, None)  # id on expt data; ii could be 0
+            epd_ion_relation = ''
+            list_matches = []
+            if interim_id != None:
+                epd_ion_relation = self.peak_to_empCpd_ion_relation[ii]
+                # Meaning there's empCpd for this feature, we look for earlier search result in search_result_dict
+                list_matches = epd_search_result_dict[interim_id]
+                # [('C7H8N2O_136.063663', 'M+H[1+]', 2), ('C7H9N2O_137.071488', 'M[1+]', 2), ('C7H6N2_118.053098', 'M+H2O+H[1+]', 1)]
+            if not list_matches:
+                # Meaning singleton feature, new search by m/z
+                list_matches = KCD.search_mz_single(mz)
+                # [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}]
+                list_matches = [(x['parent_epd_id'], x['ion_relation'], None) for x in list_matches]
+            peak_result_dict[ii] = {'peak': peak,
+                                    'interim_id': interim_id,
+                                    'epd_ion_relation': epd_ion_relation,
+                                    'list_matches': list_matches,
+                                    }
+        return peak_result_dict, epd_search_result_dict
+
+
+    def extend_annotate_formulae(self, search_result):
+        '''
+        Two ways:
+        1. extend existing empCpds to more adducts
+        2. formula inference based on m/z diff to others
+        '''
+        pass
+
 
     def choose_top_epd(list_KCD_matches):
         '''recommend best from matches, e.g. 
@@ -442,42 +486,36 @@ class ExperimentalEcpdDatabase:
         '''
         pass
 
+
     def export_empCpds(self, outfile="EED_empCpds.json"):
         with open(outfile, 'w', encoding='utf-8') as O:
             json.dump(list(self.dict_empCpds.values()), O, ensure_ascii=False, indent=2)
 
-    def export_annotations(self, search_result_dict, KCD, export_file_name_prefix, include_succinct=False):
+
+    def export_annotations(self, KCD, export_file_name_prefix, include_succinct=False):
         '''
         Export expt empCpds, match relationships, and a tsv table for input list_peaks, with all matched db empCpds.
 
         To-do:
         Will add option to include a version succinct annotation of anchor ions and recommended matches only.
-        
         '''
+        peak_result_dict, epd_search_result_dict = self.annotate_all_against_KCD(KCD)
+
         self.export_empCpds(export_file_name_prefix+"EED_empCpds.json")
         with open(export_file_name_prefix+"mapping.json", 'w', encoding='utf-8') as O:
-            json.dump(search_result_dict, O, ensure_ascii=False, indent=2)
+            json.dump(epd_search_result_dict, O, ensure_ascii=False, indent=2)
 
-        s = "[peak]id_number\tmz\tapex\t[EmpCpd]interim_id\tmatched_DB_shorts\tmatched_DB_records\n"
-        for peak in self.list_peaks:
-            ii, mz, apex = peak['id_number'], peak['mz'], peak['apex']
+        s = "[peak]id_number\tmz\tapex\t[EmpCpd]interim_id\t[EmpCpd]ion_relation\tmatched_DB_shorts\tmatched_DB_records\n"
+        for ii, V in peak_result_dict.items():
             matched_DB_shorts, matched_DB_records = '', ''
-            interim_id = self.peak_to_empCpd.get(ii, None)  # id on expt data; ii could be 0
-            list_matches = []
-            if interim_id != None:
-                list_matches = search_result_dict[interim_id]
-                # [('C7H8N2O_136.063663', 'M+H[1+]', 2), ('C7H9N2O_137.071488', 'M[1+]', 2), ('C7H6N2_118.053098', 'M+H2O+H[1+]', 1)]
-            if not list_matches:
-                list_matches = KCD.search_mz_single(mz)
-                # [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}]
-                list_matches = [(x['parent_epd_id'], x['ion_relation'], None) for x in list_matches]
-
+            list_matches = V['list_matches']
             if list_matches:
                     matched_DB_shorts = ", ".join([ "(" + KCD.short_report_emp_cpd(xx[0]) + ")"  for xx in list_matches])
                     matched_DB_records = ", ".join([str(xx) for xx  in list_matches])
 
             s += '\t'.join([str(x) for x in [
-                ii, mz, apex, interim_id, matched_DB_shorts, matched_DB_records]]) + "\n"
+                ii, V['peak']['mz'], V['peak']['apex'], V['interim_id'], V['epd_ion_relation'],
+                matched_DB_shorts, matched_DB_records]]) + "\n"
 
         outfile = export_file_name_prefix + '.tsv'
         with open(outfile, 'w') as O:

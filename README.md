@@ -43,6 +43,8 @@ A few examples:
 {
     "neutral_formula_mass": 268.08077, 
     "neutral_formula": C10H12N4O5,
+    "biological_ion": '',
+    "biological_ion_charge": None,
     "alternative_formulas": [],
     "interim_id": C10H12N4O5_268.08077,
     "identity": [
@@ -65,6 +67,8 @@ A few examples:
 These examples show a core set of attributes. 
 Users can extend to include other attributes that meet their own project needs.
 With consistent core concepts, some simple mapping dictionaries will produce interoperability between projects. 
+
+In empirical compound, MS1_pseudo_Spectra are for adduction ions (A-ions); the biological_ion is usually different (B-ions).
 
 The App Engine web tool is in a different repository.
 

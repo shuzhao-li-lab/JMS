@@ -238,6 +238,20 @@ def find_adduct_signatures(list_peaks, mztree, adduct_patterns, mz_tolerance_ppm
     return signatures
 
 
+def search_formulae(list_peaks, db_tree):
+    '''
+    Search HMDB and PubChemLite for formula matches
+    '''
+
+
+    pass
+
+
+
+
+
+
+
 def find_mzdiff_pairs_from_masstracks(list_mass_tracks, list_mz_diff=[1.003355, 21.9820], mz_tolerance_ppm=5):
     '''
     Find all pairs in list_mass_tracks that match a pattern in list_mz_diff, and return their id_numbers as pairs.
