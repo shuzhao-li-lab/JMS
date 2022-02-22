@@ -5,12 +5,14 @@ and to connect experimental data to empirical compounds.
 '''
 import json
 from operator import itemgetter
+import numpy as np
 from mass2chem.epdsConstructor import epdsConstructor
 from .search import *
 from .ions import compute_adducts_formulae, generate_ion_signature
 
+
 def read_table_to_peaks(infile, delimiter='\t'):
-    '''Made as template. Modify accordign to your own file format.
+    '''Merely provided as a template. Modify accordign to your own file format.
     '''
     list_peaks = []
     w = open(infile).readlines()
@@ -223,6 +225,26 @@ class knownCompoundDatabase:
                 self.search_mz_single(query_mz, mode, mz_tolerance_ppm)
             )
         return results
+
+    def evaluate_mass_accuracy_ratio(self, query_mz_list, mode='pos', mz_tolerance_ppm=10):
+        '''
+        Find the best matches of query_mz_list in known compound database, within mz_tolerance_ppm,
+        then evaluate systematic shift of experimental m/z values by theoretical compound values.
+        This can be used to report mass accuracy, and to help mass calibration.
+        '''
+        results = []        # delta m/z, [(expt - theoretical)/theoretical, ...]
+        for query_mz in query_mz_list:
+            found = find_best_match_centurion_indexed_list(query_mz, self.emp_cpds_trees[mode], mz_tolerance_ppm)
+            if found:
+                results.append( query_mz/found['mz'] - 1 )
+
+        if results:
+            ratio = np.mean(results)
+            print("Ratio of mass accuracy was estimated on %d matched values as %2.1f ppm." %(len(results), ratio*1000000))
+            return ratio
+        else:
+            print("No m/z match found in database to estimate mass accuracy.")
+            return None
 
     def search_emp_cpd_single(self, emp_cpd, mode='pos', mz_tolerance_ppm=5):
         '''
