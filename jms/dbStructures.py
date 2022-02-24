@@ -375,8 +375,8 @@ class ExperimentalEcpdDatabase:
         '''
         self.list_peaks = list_peaks
         ECCON = epdsConstructor(list_peaks, mode=self.mode)
-        list_empCpds = ECCON.peaks_to_epds()
-        self.dict_empCpds = self.index_reformat_epds(list_empCpds, list_peaks)
+        #list_empCpds = self.index_reformat_epds(list_empCpds, list_peaks)
+        self.dict_empCpds = ECCON.peaks_to_epdDict() 
         self.index_empCpds()
 
     def build_from_list_empCpds(self, list_empCpds):
@@ -406,37 +406,6 @@ class ExperimentalEcpdDatabase:
                 __PL.append( P )
 
         self.indexed_empCpds = build_centurion_tree(__PL)
-
-    def index_reformat_epds(self, list_empCpds, FeatureList):
-        '''
-        Needs clean up. This introduces inconsistency
-        '''
-        fDict = {}
-        for F in FeatureList:
-            fDict[F['id_number']] = F
-        new = {}
-        for E in list_empCpds:
-            features = []
-            for peak in E['list_peaks']:
-                features.append(
-                    {'id_number': peak[0], 
-                    'mz': fDict[peak[0]]['mz'], 
-                    #'rtime': fDict[peak[0]]['apex'], 
-                    'apex': fDict[peak[0]]['apex'], 
-                    # 'charged_formula': '', 
-                    'ion_relation': peak[1]}
-                )
-            new[E['id']] = {
-                'interim_id': E['id'], 
-                'neutral_formula_mass': None,
-                'neutral_formula': None,
-                'Database_referred': [],
-                'identity': [],
-                'MS1_pseudo_Spectra': features,
-                'MS2_Spectra': [],
-                }
-
-        return new
 
     # standalone search functions
     def search_peaks_mz_single(self, query_mz, mz_tolerance_ppm=5):
