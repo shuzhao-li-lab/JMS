@@ -1,6 +1,6 @@
 '''
-
-Following tools in mass2chem.
+Following tools in mass2chem. 
+Some are replicated here to enable standalone use.
 
 tree = build_centurion_tree(list_peaks)
 
@@ -74,6 +74,12 @@ extended_adducts = {
     'neg': [],
 }
 
+# this does not include combinatorial values of isotopes and adducts
+# Mostly used as seeds; better to do inclusive search after matched to formulae
+seed_empCpd_patterns = {
+    'pos': [(1.003355, '13C/12C', (0, 0.8)), (1.0078, 'H'), (21.9820, 'Na/H'), ],
+    'neg': [(1.003355, '13C/12C', (0, 0.8)), (1.0078, 'H'), (20.97474706646, '+Na-2H'), (34.9689, '35Cl')],
+}
 
 #
 # -----------------------------------------------------------------------------
