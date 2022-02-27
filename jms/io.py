@@ -64,7 +64,7 @@ def read_table_to_peaks(infile,
         a = line.split(delimiter)   # not rstrip, so trailing EOL will be carried forward
         mz, rt = float(a[mz_col]), float(a[rtime_col])
         if feature_id != None:
-            fid = a[feature_id]
+            fid = a[feature_id].strip()
         else:
             fid = _make_id(ii, mz, rt)
         peak = {'id_number': fid, 'mz': mz, 'rtime': rt, 'apex': rt}

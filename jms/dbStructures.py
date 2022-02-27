@@ -375,8 +375,13 @@ class ExperimentalEcpdDatabase:
         '''
         self.list_peaks = list_peaks
         ECCON = epdsConstructor(list_peaks, mode=self.mode)
-        #list_empCpds = self.index_reformat_epds(list_empCpds, list_peaks)
-        self.dict_empCpds = ECCON.peaks_to_epdDict() 
+        self.dict_empCpds = ECCON.peaks_to_epdDict(
+                seed_search_patterns = ECCON.seed_search_patterns, 
+                ext_search_patterns = ECCON.ext_search_patterns,
+                mz_tolerance_ppm=5, 
+                coelution_function='overlap',
+                check_isotope_ratio = True
+        ) 
         self.index_empCpds()
 
     def build_from_list_empCpds(self, list_empCpds):
