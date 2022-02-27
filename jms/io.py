@@ -25,15 +25,12 @@ Input/Output functions
         'other_ids': {'PubChem': '131753609', 'KEGG': '', 'ChEBI': ''}}
 '''
 
-
 peak_attribute_dict = {
     'm/z': 'mz',
     'mz': 'mz',
     'apex': 'rtime',
     # ...,
 }
-
-
 
 def read_table_to_peaks(infile, 
                         has_header=True, mz_col=1, rtime_col=2, feature_id=None,
@@ -66,6 +63,7 @@ def read_table_to_peaks(infile,
         if feature_id != None:
             fid = a[feature_id].strip()
         else:
+            ii += 1
             fid = _make_id(ii, mz, rt)
         peak = {'id_number': fid, 'mz': mz, 'rtime': rt, 'apex': rt}
         if has_header and full_extract:
