@@ -34,30 +34,47 @@ peak_attribute_dict = {
 }
 
 
-def read_table_to_peaks(infile, delimiter='\t'):
+
+def read_table_to_peaks(infile, 
+                        has_header=True, mz_col=1, rtime_col=2, feature_id=None,
+                        full_extract=False,
+                        delimiter='\t'):
     '''
-    return list of peaks, e.g. [
-        {
+    Read a text feature table, and 
+    return list of peaks, e.g. [ {
         'id_number': 555,
         'mz': 133.0970, 
         'apex': 654, 
         'height': 14388.0, 
-        'left_base': 648, 
-        'right_base': 655, 
-        }, ...
-    ]
+        }, ... ]
+    
+    full_extract: to keep all fields in output as strings, only if has_header.
+    feature_id: if None, create id for each peak/feature.
     '''
+    def _make_id(ii, mz, rt):
+        return 'F' + str(ii) + '_' + str(round(mz, 6)) + '@' + str(round(rt, 2))
+
     list_peaks = []
     w = open(infile).readlines()
-    for line in w[1:]:
-        a = line.rstrip().split(delimiter)
-        list_peaks.append(
-            {'id_number': a[13], 'mz': float(a[2]), 
-            'apex': float(a[3]), 'height': float(a[5]), 
-            'cSelectivity': float(a[10]), 'goodness_fitting': float(a[11]), 'snr': float(a[12]), }
-        )
+    if has_header:
+        header = w[0].rstrip().split(delimiter)
+        w = w[1:]
+    ii = 0
+    for line in w:
+        a = line.split(delimiter)   # not rstrip, so trailing EOL will be carried forward
+        mz, rt = float(a[mz_col]), float(a[rtime_col])
+        if feature_id != None:
+            fid = a[feature_id]
+        else:
+            fid = _make_id(ii, mz, rt)
+        peak = {'id_number': fid, 'mz': mz, 'rtime': rt, 'apex': rt}
+        if has_header and full_extract:
+            peak2 = dict(zip(header, a))
+            peak2.update(peak)
+            peak = peak2
 
-    print(len(list_peaks))
+        list_peaks.append( peak )
+
     return list_peaks
 
 
