@@ -1,5 +1,6 @@
 # Mac
 .DS_Store
+.ipynb_checkpoints
 
 # test
 test/
