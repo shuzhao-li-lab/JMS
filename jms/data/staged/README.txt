@@ -1,5 +1,5 @@
 Staged intermediary files
 
 
-AS generated serum_metabolites_convalues.csv,
-which needs to be converted to dictionary, with meta data on units, and parsing code to be linked (can be a notebook in this repo).
+AS generated serum_metabolites_convalues_unique_editsAS.csv using notebooks @ https://github.com/shuzhao-li/JMS/tree/main/notebooks/RetreiveSerumMetabolitesConcValues 
+which needs to be converted to dictionary, with meta data on units. 
