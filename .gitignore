@@ -1,19 +1,24 @@
 # Mac
 .DS_Store
 
+# test
+test/
 
+
+
+#AS
 #all hidden files
 .*  # ignore all hidden files and folders
 !/.gitignore  # explicitly do not ignore .gitignore
 
 
 #testing to ignore ipynb_checkpoints
+# it will work only for untracked files ; :/
 .ipynb_checkpoints
-*/.ipynb_checkpoints/*
 
-# test
-test/
 
-#AS
+
+
+
 
 
