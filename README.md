@@ -12,17 +12,17 @@ and we encourage reuse and community contributions.
 A few examples:
 
 ```
-# A LC-MS peak:
+// A LC-MS peak:
 {
     'id_number': 555,
     'mz': 133.0970, 
-    'apex': 654, 
+    'rtime': 654, 
     'height': 14388.0, 
     'left_base': 648, 
-    'right_base': 655, 
+    'right_base': 662, 
 }
 
-# A compound (i.e. metabolite):
+// A compound (i.e. metabolite):
 {
     'primary_id': HMDB0000195,
     'primary_db': 'HMDB',
@@ -39,7 +39,7 @@ A few examples:
                   },
 }
 
-# An empirical compound:
+// An empirical compound:
 {
     "neutral_formula_mass": 268.08077, 
     "neutral_formula": C10H12N4O5,
@@ -75,30 +75,19 @@ The App Engine web tool is in a different repository.
 How to use
 ==========
 
-See notebooks under docs/ for demostration.
+See notebooks under docs/ for demonstration.
 
-Example code of running wrapper function:
+Example code of annotating a feature table against HMDB:
 
 ```
 import json
 from jms.dbStructures import annotate_peaks_against_kcds
-
-def read_table_to_peaks(infile, delimiter='\t'):
-    list_peaks = []
-    w = open(infile).readlines()
-    for line in w[1:]:
-        a = line.rstrip().split(delimiter)
-        list_peaks.append(
-            {'id_number': a[13], 'mz': float(a[2]), 
-            'apex': float(a[3]), 'height': float(a[5]), 
-            'cSelectivity': float(a[10]), 'goodness_fitting': float(a[11]), 'snr': float(a[12]), }
-        )
-    return list_peaks
+from jms.io import read_table_to_peaks
 
 list_compounds = json.load(open('jms/data/compounds/list_compounds_HMDB4.json'))
-ipsc = read_table_to_peaks('pos_cmap_feature_table.csv', ',')
+mydata = read_table_to_peaks('pos_cmap_feature_table.csv', ',')
 
-annotate_peaks_against_kcds(ipsc, list_compounds, 
+annotate_peaks_against_kcds(mydata, list_compounds, 
                                 export_file_name_prefix='jms_annotated_',
                                 mode='pos',  mz_tolerance_ppm=5)
 ```
@@ -106,15 +95,15 @@ annotate_peaks_against_kcds(ipsc, list_compounds,
 Related libraries and tools
 ===========================
 
-mummichog(3)
-
-Azimuth DB: the chemical database for biology, including metabolic models
-
 metDataModel: data models for metabolomics, used by mummichog and Azimuth DB
 
 mass2chem: common utilities in interpreting mass spectrometry data, annotation
 
 Asari: trackable and scalable LC-MS data preprocessing
+
+mummichog(3)
+
+Azimuth DB: the chemical database for biology, including metabolic models
 
 
 Citation

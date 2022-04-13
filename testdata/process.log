@@ -1,0 +1,44 @@
+➜  asari git:(main) ✗ python3 -m asari.main process --input /Users/shuzhao/bulk/Bugman --output  bugman_hilicpos --reference 13C_Ecoli_QRESS_Qstd_20220321_001.mzML
+
+
+~~~~~~~ Hello from Asari (1.5.3) ~~~~~~~~~
+
+Working on ~~ /Users/shuzhao/bulk/Bugman ~~ 
+
+
+Processed Blank_H2O_ACN_20220321_001.mzML with 1827 mass tracks.
+Processed 12C_Ecoli_QRESS_20220321_001.mzML with 3424 mass tracks.
+Processed 13C_Ecoli_QRESS_20220321_001.mzML with 3600 mass tracks.
+Processed 13C_Ecoli_QRESS_Qstd_20220321_001.mzML with 4543 mass tracks.
+Processed Qstd_20220321_001.mzML with 3624 mass tracks.
+
+Initiating MassGrid, ...
+    The reference sample is:
+    ||* 13C_Ecoli_QRESS_Qstd_20220321_001 *||
+
+Max _retention_time is 299.87 at scan number 1184.
+
+Adding sample to MassGrid, 12C_Ecoli_QRESS_20220321_001
+    mapped pairs = 2038 / 3424 
+Adding sample to MassGrid, 13C_Ecoli_QRESS_20220321_001
+    mapped pairs = 2954 / 3600 
+Adding sample to MassGrid, Blank_H2O_ACN_20220321_001
+    mapped pairs = 1158 / 1827 
+Adding sample to MassGrid, Qstd_20220321_001
+    mapped pairs = 2947 / 3624 
+
+Calibrating retention time to reference, ...
+
+    ~Warning~ Faluire in retention time alignment on Blank_H2O_ACN_20220321_001, due to too few aligned features (10).
+Peak detection on 7921 composite mass tracks, ...
+
+Feature table (4016 x 5) was written to asari_project_bugman_hilicpos_41394432/export/full_Feature_table.tsv.
+Filtered Feature table (2535 x 5) was written to asari_project_bugman_hilicpos_41394432/preferred_Feature_table.tsv.
+
+Mass accuracy was estimated on 334 matched values as -0.0 ppm.
+
+
+Annotating empirical compounds on 4016 features/peaks, ...
+epdsConstructor - numbers of seeded epds and included peaks:  (652, 1356)
+
+Annotation of 2641 Empirical compounds was written to asari_project_bugman_hilicpos_41394432/Feature_annotation.tsv.
