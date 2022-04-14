@@ -95,7 +95,7 @@ annotate_peaks_against_kcds(mydata, list_compounds,
 Related libraries and tools
 ===========================
 
-metDataModel: data models for metabolomics, used by mummichog and Azimuth DB
+metDataModel: data models for metabolomics
 
 mass2chem: common utilities in interpreting mass spectrometry data, annotation
 

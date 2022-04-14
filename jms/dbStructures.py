@@ -1,30 +1,6 @@
 '''
 Class structures to connect metabolite/compound databases to empirical compounds;
 and to connect experimental data to empirical compounds.
-
-Example compound in KCD.mass_indexed_compounds:
-    ('C8H13N2O2_169.097154',
-    {'interim_id': 'C8H13N2O2_169.097154',
-    'neutral_formula': 'C8H13N2O2',
-    'neutral_formula_mass': 169.097154087,
-    'compounds': [{'primary_id': 'HMDB0062696',
-        'primary_db': 'HMDB',
-        'name': 'Pyridoxaminium(1+)',
-        'neutral_formula': 'C8H13N2O2',
-        'neutral_formula_mass': 169.097154087,
-        'SMILES': 'CC1=C(O)C(C[NH3+])=C(CO)C=N1',
-        'inchikey': 'NHZMQXZHNVQTQA-UHFFFAOYSA-O',
-        'other_ids': {'PubChem': '25245492', 'KEGG': '', 'ChEBI': '57761'}}]})
-Example search result:
-        peak_result_dict can have one empCpd matched to multiple DB entries, e.g.
-            {'peak': {'parent_masstrack_id': 240,
-            'mz': 119.12584100277608,
-            'id_number': 'F201'},
-            'interim_id': 20,
-            'epd_ion_relation': '13C/12C',
-            'list_matches': [('C6H15NO_117.115364', 'M+H[1+]', 2),
-            ('C6H13N_99.104799', 'M+H2O+H[1+]', 1)]}
-
 '''
 import json
 from operator import itemgetter
@@ -36,21 +12,6 @@ from .ions import compute_adducts_formulae, generate_ion_signature
 from .data.list_formula_mass import list_formula_mass
 
 
-def read_table_to_peaks(infile, delimiter='\t'):
-    '''Merely provided as a template. Modify according to your own file format.
-    '''
-    list_peaks = []
-    w = open(infile).readlines()
-    for line in w[1:]:
-        a = line.rstrip().split(delimiter)
-        list_peaks.append(
-            {'id_number': a[13], 'mz': float(a[2]), 
-            'apex': float(a[3]), 'height': float(a[5]), 
-            'cSelectivity': float(a[10]), 'goodness_fitting': float(a[11]), 'snr': float(a[12]), }
-        )
-
-    print(len(list_peaks))
-    return list_peaks
 
 def annotate_peaks_against_kcds(list_peaks, list_compounds, 
                                 export_file_name_prefix='jms_annotated_',
@@ -66,8 +27,11 @@ def annotate_peaks_against_kcds(list_peaks, list_compounds,
     KCD.export_mass_indexed_compounds(export_file_name_prefix+"KCD_mass_indexed_compounds.json")
     EED = ExperimentalEcpdDatabase()
     EED.build_from_list_peaks(list_peaks)
-    search_result = EED.annotate_against_KCD(KCD)
+
+    search_result = EED.annotate_empCpds_against_KCD( KCD )
+
     EED.export_annotations(search_result, KCD, export_file_name_prefix)
+
 
 
 #----------------------------------------------------------------------------------------
@@ -485,7 +449,11 @@ class ExperimentalEcpdDatabase:
         '''
         resultDict = {}
         for epd in self.dict_empCpds.values():
-            resultDict[epd['interim_id']] = KCD.search_emp_cpd_single(epd, self.mode)
+            resultDict[epd['interim_id']] = KCD.search_emp_cpd_single(epd, self.mode
+            
+            # to add  mz_tolerance_ppm
+            
+            )
         return resultDict
 
     def search_mz_for_formula(self, mz):
