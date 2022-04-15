@@ -4,7 +4,8 @@
 # test
 test/
 
-
+#python
+*.pyc
 
 #AS
 #all hidden files
