@@ -1,0 +1,218 @@
+{
+  "list_of_Empirical_Compounds": [
+    {
+      "id": "",
+      "interim_id": "",
+      "experiment_belonged": "",
+      "annotation_method": "",
+      "neutral_base_mass": 0.0,
+      "neutral_formula_mass": 0.0,
+      "neutral_formula": "",
+      "Database_referred": [],
+      "MS1_pseudo_Spectra": [
+        {
+          "feature_id": "",
+          "mz": 179.057449,
+          "rtime": 72.48,
+          "charged_formula": "",
+          "ion_relation": "M-H[-]"
+        }
+      ],
+      "list_features": [
+        {
+          "feature_id": "",
+          "mz": 179.057449,
+          "rtime": 72.48,
+          "charged_formula": "",
+          "ion_relation": "M-H[-]"
+        }
+      ],
+      "MS2_Spectra": [],
+      "identity": [
+        {
+          "compounds": "HMDB0001889",
+          "names": [
+            "Theophylline"
+          ],
+          "score": 0,
+          "probability": 0
+        }
+      ],
+      "annotation": [
+        {
+          "compounds": "HMDB0001889",
+          "names": [
+            "Theophylline"
+          ],
+          "score": 0,
+          "probability": 0
+        }
+      ]
+    },
+    {
+      "id": "",
+      "interim_id": "",
+      "experiment_belonged": "",
+      "annotation_method": "",
+      "neutral_base_mass": 0.0,
+      "neutral_formula_mass": 0.0,
+      "neutral_formula": "",
+      "Database_referred": [],
+      "MS1_pseudo_Spectra": [
+        {
+          "feature_id": "",
+          "mz": 180.06662,
+          "rtime": 46.620000000000005,
+          "charged_formula": "",
+          "ion_relation": "M-H[-]"
+        }
+      ],
+      "list_features": [
+        {
+          "feature_id": "",
+          "mz": 180.06662,
+          "rtime": 46.620000000000005,
+          "charged_formula": "",
+          "ion_relation": "M-H[-]"
+        }
+      ],
+      "MS2_Spectra": [],
+      "identity": [
+        {
+          "compounds": "PUBCHEMCID71098",
+          "names": [
+            "(2R)-2-amino-3-(4-hydroxyphenyl)propanoic acid"
+          ],
+          "score": 0,
+          "probability": 0
+        }
+      ],
+      "annotation": [
+        {
+          "compounds": "PUBCHEMCID71098",
+          "names": [
+            "(2R)-2-amino-3-(4-hydroxyphenyl)propanoic acid"
+          ],
+          "score": 0,
+          "probability": 0
+        }
+      ]
+    },
+    {
+      "id": "",
+      "interim_id": "",
+      "experiment_belonged": "",
+      "annotation_method": "",
+      "neutral_base_mass": 0.0,
+      "neutral_formula_mass": 0.0,
+      "neutral_formula": "",
+      "Database_referred": [],
+      "MS1_pseudo_Spectra": [
+        {
+          "feature_id": "",
+          "mz": 146.04588130000002,
+          "rtime": 26.94,
+          "charged_formula": "",
+          "ion_relation": "M-H[-]"
+        }
+      ],
+      "list_features": [
+        {
+          "feature_id": "",
+          "mz": 146.04588130000002,
+          "rtime": 26.94,
+          "charged_formula": "",
+          "ion_relation": "M-H[-]"
+        }
+      ],
+      "MS2_Spectra": [],
+      "identity": [
+        {
+          "compounds": "HMDB0000148",
+          "names": [
+            "L-Glutamic acid"
+          ],
+          "score": 0,
+          "probability": 0
+        }
+      ],
+      "annotation": [
+        {
+          "compounds": "HMDB0000148",
+          "names": [
+            "L-Glutamic acid"
+          ],
+          "score": 0,
+          "probability": 0
+        }
+      ]
+    },
+    {
+      "id": "",
+      "interim_id": "",
+      "experiment_belonged": "",
+      "annotation_method": "",
+      "neutral_base_mass": 0.0,
+      "neutral_formula_mass": 0.0,
+      "neutral_formula": "",
+      "Database_referred": [],
+      "MS1_pseudo_Spectra": [
+        {
+          "feature_id": "",
+          "mz": 128.0353166,
+          "rtime": 45.6,
+          "charged_formula": "",
+          "ion_relation": "M-H[-]"
+        }
+      ],
+      "list_features": [
+        {
+          "feature_id": "",
+          "mz": 128.0353166,
+          "rtime": 45.6,
+          "charged_formula": "",
+          "ion_relation": "M-H[-]"
+        }
+      ],
+      "MS2_Spectra": [],
+      "identity": [
+        {
+          "compounds": "HMDB0000267",
+          "names": [
+            "Pyroglutamic acid"
+          ],
+          "score": 0,
+          "probability": 0
+        }
+      ],
+      "annotation": [
+        {
+          "compounds": "HMDB0000267",
+          "names": [
+            "Pyroglutamic acid"
+          ],
+          "score": 0,
+          "probability": 0
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "description": "Qstd annotation library for 5 min RPneg method.",
+    "date": "2022-04-15",
+    "curator": "Minghao Gong",
+    "mode": "RPneg",
+    "notes": [
+      {
+        "maintainer": "MG",
+        "date": "2022-04-15",
+        "note": "Qstd that has MS2 spectra matched with MS2 spectra of authentic standards using 5 min RPneg method;         there is an issue where multiple peaks may be identified to has MS2 match with the same group of compound;         right now, we put all the peaks into a single empirical compound record."
+      },
+      {
+        "maintainer": "MG",
+        "date": "2022-04-18",
+        "note": "repopulate the name field that is not filled in the previous round."
+      }
+    ]
+  }
+}
