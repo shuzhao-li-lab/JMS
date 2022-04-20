@@ -1,0 +1,15 @@
+---
+ion_relationship: '[M+H]+'
+mode: 'HILICpos'
+description: 'HILICpos authentic standard library from Shujian and Minghao'
+curator: 'Shujian Zheng|Minghao Gong'
+method: '5 min method'
+date: '04/19/2022'
+notes:
+  initiation:
+    curator: MG
+    date: '04/19/2022'
+    note: '5 min method, the library was created and combined by Minghao Gong and Shujian Zheng'
+
+version: '0.1'
+label: 'combn_1strnd'
