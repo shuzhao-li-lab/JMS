@@ -6,7 +6,35 @@ from jms.formula import *
 
 sys.path.append("/Users/gongm/Documents/projects/mass2chem/")
 from mass2chem.formula import *
-  
+
+def list_all_identifiers(cobra_model,notes):
+    '''
+    List all the identifier sources and the example of identifiers in the current model
+    It is used to make strategy for parsing. 
+
+    Input
+    =====
+    cobra_model: a cobra model
+    notes: dependent on the identifier source, it may differ. In AGORA and EBI models, 'notes' are by default while in humanGEM, 'annotation' are by default
+
+    Output
+    ======
+    A set of unique identifier source and examples of the identifiers
+
+    '''
+    identifiers = []
+    example = {}
+    for item in cobra_model.metabolites:
+        try:
+            identifiers.extend(item.__dict__[notes].keys())
+            for k,v in item.__dict__[notes].items(): 
+                if k not in example:
+                    example.update({k:v})
+        except:
+            None
+    uni_id = set(identifiers)
+    return(uni_id,example)
+
 def neutral_formula2mass(neutral_formula):
     '''
     Convert neutral formula to mass but removing characters (e.g., X, R) typical in GEM but not ready for metabolomics application
@@ -22,7 +50,7 @@ def remove_compartment(Cpd_id,len_of_suffix):
     '''
     remove compartment based the length of suffix of the compound ID.
     '''
-    Cpd_id_mod = Cpd_id[:len(Cpd_id)-len_of_suffix]
+    Cpd_id_mod = Cpd_id.rstrip()[:len(Cpd_id)-len_of_suffix]
     return(Cpd_id_mod)
 
 def remove_duplicate_cpd(list_of_Cpds):
