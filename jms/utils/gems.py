@@ -35,6 +35,38 @@ def list_all_identifiers(cobra_model,notes):
     uni_id = set(identifiers)
     return(uni_id,example)
 
+
+def dict2listOfTuple(db_dict, delimiter):
+    '''
+    Convert dictionary to a list of tuple for convenient conversion in db_ids
+    '''
+    list_of_tuple = []
+    for k,v in db_dict.items():
+        if delimiter in v:
+            list_of_ids = [x.rstrip() for x in v.split(delimiter)]
+            for _id in list_of_ids:
+                list_of_tuple.append((k,_id))
+        else:
+            list_of_tuple.append((k,v))
+    return list_of_tuple
+
+def listOfTuple2dict(tuples, delimiter = None):
+    '''
+    Convert a list of tuple to dictionary for convenient conversion in db_ids
+    '''
+    res_dict = {}
+    unique_db_name = list(set([tup[0] for tup in tuples]))
+    for db_name in unique_db_name:
+        db_ids = []
+        for tup in tuples:
+            if tup[0] == db_name:
+                db_ids.append(tup[1])
+        if delimiter == None:
+            res_dict[db_name] = db_ids
+        else:
+            res_dict[db_name] = ', '.join(db_ids)
+    return res_dict
+
 def neutral_formula2mass(neutral_formula):
     '''
     Convert neutral formula to mass but removing characters (e.g., X, R) typical in GEM but not ready for metabolomics application
@@ -105,3 +137,4 @@ def export_json(export_file_path,MetabolicModel):
 
 def export_table(export_file_path = '',MetabolicModel = '',list_of_entries = 'list_of_compounds'):
     pd.DataFrame(MetabolicModel.serialize()[list_of_entries]).to_csv(export_file_path, index = False)
+
