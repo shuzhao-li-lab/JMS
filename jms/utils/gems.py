@@ -61,10 +61,14 @@ def listOfTuple2dict(tuples, delimiter = None):
         for tup in tuples:
             if tup[0] == db_name:
                 db_ids.append(tup[1])
-        if delimiter == None:
+        if len(db_ids) == 1:
+            db_ids = db_ids[0]
             res_dict[db_name] = db_ids
-        else:
-            res_dict[db_name] = ', '.join(db_ids)
+        elif len(db_ids) > 1:
+            if delimiter == None:
+                res_dict[db_name] = db_ids
+            else:
+                res_dict[db_name] = ', '.join(db_ids)
     return res_dict
 
 def neutral_formula2mass(neutral_formula):
