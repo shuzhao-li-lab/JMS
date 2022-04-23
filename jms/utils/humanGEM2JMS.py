@@ -78,8 +78,8 @@ model = cobra.io.read_sbml_model(xmlFile)
 def port_metabolite(M):
     # convert cobra Metabolite to metDataModel Compound
     Cpd = Compound()
-    Cpd.src_id = remove_compartment(M.id,1)
-    Cpd.id = remove_compartment(M.id,1)              # temporarily the same with the source id
+    Cpd.src_id = remove_compartment_by_substr(M.id,1)
+    Cpd.id = remove_compartment_by_substr(M.id,1)              # temporarily the same with the source id
     Cpd.name = M.name
     Cpd.charge = M.charge
     Cpd.neutral_formula = adjust_charge_in_formula(M.formula,M.charge)
@@ -114,8 +114,8 @@ print(f'After decompartmentalization, there are {len(myCpds)} compounds left')
 def port_reaction(R):
     new = Reaction()
     new.id = R.id
-    new.reactants = [remove_compartment(m.id,1) for m in R.reactants] # decompartmentalization
-    new.products = [remove_compartment(m.id,1) for m in R.products]   # decompartmentalization
+    new.reactants = [remove_compartment_by_substr(m.id,1) for m in R.reactants] # decompartmentalization
+    new.products = [remove_compartment_by_substr(m.id,1) for m in R.products]   # decompartmentalization
     new.genes = [g.id for g in R.genes]
     ecs = R.annotation.get('ec-code', [])
     if isinstance(ecs, list):

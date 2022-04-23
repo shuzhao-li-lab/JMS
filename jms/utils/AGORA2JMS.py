@@ -44,8 +44,8 @@ today =  str(datetime.today()).split(" ")[0]
 def port_metabolite(M):
     '''convert cobra Metabolite to metDataModel Compound'''
     Cpd = Compound()
-    Cpd.src_id = remove_compartment(M.id,3) # remove the [c] from eg h2o[c]
-    Cpd.id = remove_compartment(M.id,3) # remove the [c] from eg h2o[c]
+    Cpd.src_id = remove_compartment_by_split(M.id,'[') # remove the [c] from eg h2o[c]
+    Cpd.id = remove_compartment_by_split(M.id,'[') # remove the [c] from eg h2o[c]
     Cpd.name = M.name
     Cpd.charge = M.charge
     Cpd.charged_formula = M.formula
@@ -62,8 +62,8 @@ def port_reaction(R):
     '''port reaction'''
     new = Reaction()
     new.id = R.id
-    new.reactants = [remove_compartment(m.id,3) for m in R.reactants] 
-    new.products = [remove_compartment(m.id,3) for m in R.products] 
+    new.reactants = [remove_compartment_by_split(m.id,'[') for m in R.reactants] 
+    new.products = [remove_compartment_by_split(m.id,'[') for m in R.products] 
     return new
 
 # Port pathway
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     output_fdr = '/Users/gongm/Documents/projects/JMS/JMS/JMS/test/input/test_automatic_AGORA' #
     version_manual = 'AGORA_1_03_With_Mucins_sbml' #
 
-    download_from_git = True
+    download_from_git = False
     if download_from_git == True:
         path_in_github = 'CurrentVersion/AGORA_1_03/AGORA_1_03_With_Mucins_sbml' #
 

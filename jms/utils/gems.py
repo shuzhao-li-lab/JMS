@@ -82,11 +82,21 @@ def neutral_formula2mass(neutral_formula):
         mono_mass = None
     return(mono_mass)
 
-def remove_compartment(Cpd_id,len_of_suffix):
+def remove_compartment_by_substr(Cpd_id,len_of_suffix):
     '''
     remove compartment based the length of suffix of the compound ID.
+    This is working especially for humanGEM as they just use the last character for compartmentalization designation
+    However, this is not working for EBI model as they do have "_bm" alone with "_c"
     '''
     Cpd_id_mod = Cpd_id.rstrip()[:len(Cpd_id)-len_of_suffix]
+    return(Cpd_id_mod)
+
+def remove_compartment_by_split(Cpd_id,delimiter):
+    '''
+    remove compartment based the delimiters of the compound ID.
+    This works for most other models.
+    '''
+    Cpd_id_mod = Cpd_id.rsplit(delimiter,1)[0]
     return(Cpd_id_mod)
 
 def remove_duplicate_cpd(list_of_Cpds):
