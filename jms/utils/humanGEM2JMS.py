@@ -95,6 +95,13 @@ def port_metabolite(M):
                     Cpd.db_ids.append([k,v.split(":")[1]])
                 else:
                     Cpd.db_ids.append([k,v])
+    
+    inchi_list = [x[1].split('=')[1] for x in Cpd.db_ids if x[0] == 'inchi']
+    if len(inchi_list) ==1:
+        Cpd.inchi = inchi_list[0]
+    elif len(inchi_list) >1:
+        Cpd.inchi = inchi_list
+
     return Cpd
 
 myCpds = []
@@ -179,5 +186,8 @@ print(f'Export json file')
 # Write dataframe 
 import pandas as pd
 export_table(os.path.join(output_fdr,f'{MM.id}_list_of_compounds.csv'),MM, 'list_of_compounds')
+export_table(os.path.join(output_fdr,f'{MM.id}_list_of_reactions.csv'),MM, 'list_of_reactions')
+export_table(os.path.join(output_fdr,f'{MM.id}_list_of_pathways.csv'),MM, 'list_of_pathways')
+
 print(f'Export a table of the list of compounds')
 
