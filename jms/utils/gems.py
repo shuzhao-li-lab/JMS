@@ -2,6 +2,8 @@ import sys
 import pickle
 import json
 import pandas as pd
+import re
+from jms.utils.git_download import * 
 from jms.formula import *
 
 sys.path.append("/Users/gongm/Documents/projects/mass2chem/")
@@ -152,3 +154,36 @@ def export_json(export_file_path,MetabolicModel):
 def export_table(export_file_path = '',MetabolicModel = '',list_of_entries = 'list_of_compounds'):
     pd.DataFrame(MetabolicModel.serialize()[list_of_entries]).to_csv(export_file_path, index = False)
 
+def fetch_MetabAtlas_GEM_identifiers(compound_list,
+                                     modelName,
+                                     local_path,
+                                     metab_file_name = 'metabolites.tsv',
+                                     overwrite = True):
+    url_met = f'https://github.com/SysBioChalmers/{modelName}/blob/main/model/metabolites.tsv'
+    git_download_from_file(url_met,local_path,metab_file_name)
+    metab_df = pd.read_csv(os.path.join(local_path,metab_file_name),sep = '\t')
+    metab_df.index = metab_df.mets
+    metab_dict = metab_df.to_dict('index')
+
+    metab_id_list = list(set([x[0:len(x)-1] for x in metab_dict.keys()]))
+    decomp_metab_dict = {}
+    for Id_decomp in metab_id_list:
+        for Id_comp,v in metab_dict.items():
+            if Id_decomp in Id_comp:
+                decomp_metab_dict.update({Id_decomp:v})
+                break
+    for Cpd in compound_list:
+        for k,v in decomp_metab_dict.items():
+            new_db_ids = []
+            if Cpd.id == k:
+                if overwrite == True:
+                    for kk,vv in v.items():
+                        if re.match('met(.*)ID',kk) and isinstance(vv,str):
+                            sub_key = re.match('met(.*)ID',kk)[1]
+                            if ';' in vv:
+                                sub_list = vv.split(';')
+                                for sub_id in sub_list:
+                                    new_db_ids.append((sub_key,sub_id))
+                            else:
+                                new_db_ids.append((sub_key,vv))
+                    Cpd.db_ids = new_db_ids
