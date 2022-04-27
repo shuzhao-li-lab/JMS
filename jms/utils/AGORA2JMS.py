@@ -125,6 +125,8 @@ if __name__ == '__main__':
         print(f'After decompartmentalization, there are {len(myCpds)} compounds left')
 
 
+        myCpds = fetch_AGORA_GEM_identifiers(myCpds,json_path = '../data/staged/vmh.json',overwrite = True)
+
         ## Reactions to port
         myRxns = []
         for R in model.reactions:

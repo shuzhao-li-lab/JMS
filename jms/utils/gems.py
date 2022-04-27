@@ -187,3 +187,21 @@ def fetch_MetabAtlas_GEM_identifiers(compound_list,
                             else:
                                 new_db_ids.append((sub_key,vv))
                     Cpd.db_ids = new_db_ids
+
+def fetch_AGORA_GEM_identifiers(compound_list,
+                                json_path,
+                                overwrite = True):
+    with open(json_path,'r') as f:
+        list_vmh_cpd = json.load(f)
+    vmh_dict = {}
+    for vmh_cpd in list_vmh_cpd:
+        vmh_dict.update({vmh_cpd['id']:vmh_cpd})
+    new_cpd_list = []
+    for myCpd in compound_list:
+        for k,v in vmh_dict.items():
+            if myCpd.id == k:
+                if overwrite == True:
+                    myCpd.db_ids = v['identifiers'] # the vmh json is using `identifiers` rather than `db_ids`
+                break
+        new_cpd_list.append(myCpd)
+    return new_cpd_list
