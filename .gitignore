@@ -1,8 +1,12 @@
 # Mac
 .DS_Store
 
-# test
+# test 
 test/
+
+# history
+**/history/*
+**/previous/*
 
 #python
 *.pyc
