@@ -205,3 +205,21 @@ def fetch_AGORA_GEM_identifiers(compound_list,
                 break
         new_cpd_list.append(myCpd)
     return new_cpd_list
+
+
+def fetch_CarveMe_GEM_charge_formula(compound_list,Bigg_json_path,overwrite = True):
+    with open(Bigg_json_path,'r') as f:
+        list_Bigg_cpd = json.load(f)
+    Bigg_dict = {}
+    for Bigg_cpd in list_Bigg_cpd:
+        Bigg_dict.update({Bigg_cpd['id']:Bigg_cpd})
+    new_cpd_list = []
+    for myCpd in compound_list:
+        for k,v in Bigg_dict.items():
+            if myCpd.id == k:
+                if overwrite == True:
+                    myCpd.charge = v['charge']
+                    myCpd.charged_formula = v['charged_formula'] # the Bigg json is using `identifiers` rather than `db_ids`
+                break
+        new_cpd_list.append(myCpd)
+    return new_cpd_list
