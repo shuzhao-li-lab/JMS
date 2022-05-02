@@ -27,10 +27,7 @@ def annotate_peaks_against_kcds(list_peaks, list_compounds,
     KCD.export_mass_indexed_compounds(export_file_name_prefix+"KCD_mass_indexed_compounds.json")
     EED = ExperimentalEcpdDatabase()
     EED.build_from_list_peaks(list_peaks)
-
-    search_result = EED.annotate_empCpds_against_KCD( KCD )
-
-    EED.export_annotations(search_result, KCD, export_file_name_prefix)
+    EED.export_annotations(KCD, export_file_name_prefix)
 
 
 
@@ -74,7 +71,7 @@ class empiricalCompound:
 
     def read_json_model(self, jmodel):
         self.interim_id = jmodel['interim_id']
-        self.neutral_formula_mass = jmodel['neutral_formula_mass']
+        self.neutral_formula_mass = jmodel['neutral_formula_mass'] = jmodel['neutral_mono_mass']
         self.neutral_formula = jmodel['neutral_formula']
         self.Database_referred = jmodel['Database_referred']
         self.identity = jmodel['identity']
