@@ -39,20 +39,15 @@ def adjust_charge_in_formula(charged_formula,charge):
     '''
     if charge == 0:
         result = charged_formula
-    elif charge < 0:
-        formula_dict = parse_chemformula_dict(charged_formula)
-        hydrogen_dict = {'H':abs(charge)}
-        hypothetical_neutral_formula_dict = add_formula_dict(formula_dict, hydrogen_dict)
-        if hypothetical_neutral_formula_dict:
-            result = dict_to_hill_formula(hypothetical_neutral_formula_dict)
-        else:
-            result = None
-    elif charge >0: 
+    else:
         formula_dict = parse_chemformula_dict(charged_formula)
         hydrogen_dict = {'H':-charge}
         hypothetical_neutral_formula_dict = add_formula_dict(formula_dict, hydrogen_dict)
         if hypothetical_neutral_formula_dict:
             result = dict_to_hill_formula(hypothetical_neutral_formula_dict)
-        else:
-            result = charged_formula # here dealing with Metal etc.
+        else: 
+            if charge < 0:
+                result = None
+            else:  # if charge >0, e.g., Fe, charge is 2+; it should still be Fe as formula
+                result = charged_formula # here dealing with Metal etc.
     return(result)
