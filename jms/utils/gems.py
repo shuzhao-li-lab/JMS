@@ -78,7 +78,7 @@ def neutral_formula2mass(neutral_formula):
     Convert neutral formula to mass but removing characters (e.g., X, R) typical in GEM but not ready for metabolomics application
     '''
     formula_dict = parse_chemformula_dict(neutral_formula)
-    if ("R" not in formula_dict) & ("X" not in formula_dict) & (len(formula_dict) != 0) :
+    if ("R" not in formula_dict) & ("X" not in formula_dict) & ("Z" not in formula_dict) & (len(formula_dict) != 0) :
         mono_mass = calculate_mass(formula_dict,6)
     else:
         mono_mass = None
