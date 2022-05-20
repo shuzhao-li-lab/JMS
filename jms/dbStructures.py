@@ -312,12 +312,13 @@ class ExperimentalEcpdDatabase:
 
     self.dict_empCpds is updated in situ.
     '''
-    def __init__(self, mode='pos'):
+    def __init__(self, mode='pos', mz_tolerance_ppm=5):
         '''
         mode: ionizaation mode, 'pos' or 'neg'.
         Take input list of peaks. Peaks here are usually features.
         '''
         self.mode = mode
+        self.mz_tolerance_ppm = mz_tolerance_ppm
         self.list_peaks = []
         self.indexed_peaks = {}
         self.dict_peaks = {}
@@ -425,7 +426,7 @@ class ExperimentalEcpdDatabase:
             )
         return results
 
-    def annotate_empCpds_against_KCD(self, KCD):
+    def annotate_empCpds_against_KCD(self, KCD, mz_tolerance_ppm=5):
         '''
         Get all empCpd matches between this experimental dataset and a known compound database.
         KCD: knownCompoundDatabase instance.
@@ -446,33 +447,29 @@ class ExperimentalEcpdDatabase:
         '''
         resultDict = {}
         for epd in self.dict_empCpds.values():
-            resultDict[epd['interim_id']] = KCD.search_emp_cpd_single(epd, self.mode
-            
-            # to add  mz_tolerance_ppm
-            
-            )
+            resultDict[epd['interim_id']] = KCD.search_emp_cpd_single(epd, self.mode, mz_tolerance_ppm )
         return resultDict
 
-    def search_mz_for_formula(self, mz):
+    def search_mz_for_formula(self, mz, mz_tolerance_ppm=5):
         '''
         return best matched formula or None, 
         format as {'mz': ion[0], 'neutral_formula': formula, 
                                'ion_relation': ion[1],
                                'neutral_formula_mass': mass}
         '''
-        return search_mz_formula_tree(mz, self.formula_tree, limit_ppm=5)
+        return search_mz_formula_tree(mz, self.formula_tree, limit_ppm=mz_tolerance_ppm)
 
     # Annotation functions
-    def extend_empCpd_annotation(self, KCD):
-        self.empCpds_formula_search(KCD)
-        self.__extend_empCpds__()
+    def extend_empCpd_annotation(self, KCD, mz_tolerance_ppm=5):
+        self.empCpds_formula_search(KCD, mz_tolerance_ppm)
+        self.__extend_empCpds__(mz_tolerance_ppm)
 
-    def empCpds_formula_search(self, KCD):
+    def empCpds_formula_search(self, KCD, mz_tolerance_ppm=5):
         '''
         Update self.dict_empCpds for formulae first by KCD search then .data.formula_tree.
         KCD: knownCompoundDatabase instance.
         '''
-        epd_search_result_dict = self.annotate_empCpds_against_KCD(KCD)
+        epd_search_result_dict = self.annotate_empCpds_against_KCD(KCD, mz_tolerance_ppm)
         for interim_id, V in epd_search_result_dict.items():
             if V:
                 # update empCpd with formula matches
@@ -484,7 +481,7 @@ class ExperimentalEcpdDatabase:
             else:
                 # first peak should be anchor
                 anchor_mz = self.dict_empCpds[interim_id]['MS1_pseudo_Spectra'][0]['mz']
-                F = self.search_mz_for_formula(anchor_mz)
+                F = self.search_mz_for_formula(anchor_mz, mz_tolerance_ppm)
                 if F:
                     self.dict_empCpds[interim_id]['neutral_formula'] = F['neutral_formula']
                     self.dict_empCpds[interim_id]['neutral_formula_mass'] = F['neutral_formula_mass']
@@ -512,7 +509,7 @@ class ExperimentalEcpdDatabase:
                             self.peak_to_empCpd[peak['id_number']] = E['interim_id']
                             # this may overwrite 1:N relationships
 
-    def singleton_formula_search(self, KCD):
+    def singleton_formula_search(self, KCD, mz_tolerance_ppm=5):
         '''
         Search singletons for formulae first by KCD search then .data.formula_tree.
         KCD: knownCompoundDatabase instance.
@@ -521,7 +518,7 @@ class ExperimentalEcpdDatabase:
         singletons = [p for p in self.dict_peaks if p not in self.peak_to_empCpd.keys()]
         for p in singletons:
             _mz = self.dict_peaks[p]['mz']
-            list_matches = KCD.search_mz_single(_mz)
+            list_matches = KCD.search_mz_single(_mz, self.mode, mz_tolerance_ppm)
             # [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}]
             if list_matches:
                 # take 1st match only here
@@ -529,19 +526,19 @@ class ExperimentalEcpdDatabase:
                 found.append((p, _epd))
             else:
                 # formula search
-                F = self.search_mz_for_formula(_mz)
+                F = self.search_mz_for_formula(_mz, mz_tolerance_ppm)
                 if F:
                     found.append((p, F))            # p is id_number
 
         return found
 
-    def annotate_singletons(self, KCD):
+    def annotate_singletons(self, KCD, mz_tolerance_ppm=5):
         '''
         Search singletons for formulae first by KCD search then .data.formula_tree.
         Add new empCpds to self.dict_empCpds as new empCpds, and extend adduct search.
         '''
         formula_to_peaks = {}
-        found = self.singleton_formula_search(KCD)
+        found = self.singleton_formula_search(KCD, mz_tolerance_ppm)
         for p,F in found:
             k = F['neutral_formula']
             if k in formula_to_peaks:
@@ -569,7 +566,7 @@ class ExperimentalEcpdDatabase:
                     self.dict_empCpds[new_id_start] = {'interim_id': new_id_start,
                             'neutral_formula_mass': neutral_formula_mass, 'neutral_formula': formula,
                             'MS1_pseudo_Spectra': self.__extend_peakList__(
-                                formula, neutral_formula_mass, tmp, peakTree, mz_tolerance_ppm=5),
+                                formula, neutral_formula_mass, tmp, peakTree, mz_tolerance_ppm=mz_tolerance_ppm),
                     }
                     tmp = [_P, ]
 
@@ -577,7 +574,7 @@ class ExperimentalEcpdDatabase:
             self.dict_empCpds[new_id_start] = {'interim_id': new_id_start,
                     'neutral_formula_mass': neutral_formula_mass, 'neutral_formula': formula,
                     'MS1_pseudo_Spectra': self.__extend_peakList__(
-                                formula, neutral_formula_mass, tmp, peakTree, mz_tolerance_ppm=5),
+                                formula, neutral_formula_mass, tmp, peakTree, mz_tolerance_ppm=mz_tolerance_ppm),
             }
 
 
@@ -600,7 +597,7 @@ class ExperimentalEcpdDatabase:
         return epd_peaks + new
 
 
-    def annotate_all_against_KCD(self, KCD):
+    def annotate_all_against_KCD(self, KCD, mz_tolerance_ppm=5):
         '''
         Get matches of both empCpds and singleton peaks only in KCD.
         This function should not be used if one uses empCpds_formula_search and annotate_by_formula_grid.
@@ -625,7 +622,7 @@ class ExperimentalEcpdDatabase:
                 # this can be empty, but means the empCpd is not found in KCD.
             if not list_matches:
                 # Meaning singleton feature OR unmatched empCpd feature, new search by m/z
-                list_matches = KCD.search_mz_single(mz)
+                list_matches = KCD.search_mz_single(mz, self.mode, mz_tolerance_ppm)
                 # [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}]
                 list_matches = [(x['parent_epd_id'], x['ion_relation'], None) for x in list_matches]
             if list_matches:
@@ -685,15 +682,13 @@ class ExperimentalEcpdDatabase:
 
     #-----------------------------------------
 
-    def update_annotation(self, KCD, peak_result_dict, adduct_patterns):
+    def update_annotation(self, KCD, peak_result_dict, adduct_patterns, mz_tolerance_ppm):
         '''
         Update self.dict_empCpds, and extend search by formula-based additional isotopes/adducts.
         Not updating indexing or peak to empCpd mapping.
 
         peak_result_dict: result from self.annotate_all_against_KCD, which
          contains annotation via empCpd, via singleton, or empCpd features as if singleton.
-
-
         '''
         
         cpd_index_to_peaks = {}
@@ -729,10 +724,7 @@ class ExperimentalEcpdDatabase:
 
         ECCON = epdsConstructor(remaining_peaks, mode=self.mode)
         list_empCpds = ECCON.extend_empCpds_by_formula_grid(
-
-            self.dict_empCpds.values(), remaining_peaks, adduct_patterns, mz_tolerance_ppm=5,
-
-
+            self.dict_empCpds.values(), remaining_peaks, adduct_patterns, mz_tolerance_ppm=mz_tolerance_ppm,
         ) 
         # update self.dict_empCpds
         for EC in list_empCpds:

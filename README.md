@@ -70,6 +70,12 @@ With consistent core concepts, some simple mapping dictionaries will produce int
 
 In empirical compound, MS1_pseudo_Spectra are for adduction ions (A-ions); the biological_ion is usually different (B-ions).
 
+Packaging
+=========
+
+The PyPi package excludes subdirectories in /data.
+
+
 The App Engine web tool is in a different repository.
 
 How to use

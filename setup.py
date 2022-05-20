@@ -1,13 +1,16 @@
 from setuptools import setup, find_packages
 
+with open("jms/__init__.py") as f:
+    exec([x for x in f.readlines() if '__version__' in x][0])
+
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
   name='jms-metabolite-services',
-  version='0.3.4',
+  version=__version__,
 
-  author='Shuzhao Li',
+  author='Shuzhao Li, Minghao Gong',
   author_email='shuzhao.li@gmail.com',
   description='conversion, search of metabolic models and metabolomics data',
   long_description_content_type="text/markdown",
