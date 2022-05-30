@@ -15,7 +15,7 @@ from .data.list_formula_mass import list_formula_mass
 
 def annotate_peaks_against_kcds(list_peaks, list_compounds, 
                                 export_file_name_prefix='jms_annotated_',
-                                mode='pos',  mz_tolerance_ppm=5):
+                                mode='pos',  mz_tolerance_ppm=5, check_isotope_ratio = True):
     '''
     Wrapper function, to generate three annotation files for input list_peaks.
     list_compounds is known compound database, e.g.
@@ -26,7 +26,7 @@ def annotate_peaks_against_kcds(list_peaks, list_compounds,
     KCD.build_emp_cpds_index()
     KCD.export_mass_indexed_compounds(export_file_name_prefix+"KCD_mass_indexed_compounds.json")
     EED = ExperimentalEcpdDatabase()
-    EED.build_from_list_peaks(list_peaks)
+    EED.build_from_list_peaks(list_peaks, check_isotope_ratio)
     EED.export_annotations(KCD, export_file_name_prefix)
 
 
@@ -327,7 +327,7 @@ class ExperimentalEcpdDatabase:
         self.peak_to_empCpd = {}
         self.peak_to_empCpd_ion_relation = {}
 
-    def build_from_list_peaks(self, list_peaks):
+    def build_from_list_peaks(self, list_peaks, check_isotope_ratio = True):
         '''
         list of peaks, e.g. [ {'id_number': 555,        # change to 'id_number' throughout
                                 'mz': 133.0970, 
@@ -342,7 +342,7 @@ class ExperimentalEcpdDatabase:
                 ext_search_patterns = ECCON.ext_search_patterns,
                 mz_tolerance_ppm=5, 
                 coelution_function='overlap',
-                check_isotope_ratio = True
+                check_isotope_ratio = check_isotope_ratio
         ) 
         self.index_empCpds()
 
