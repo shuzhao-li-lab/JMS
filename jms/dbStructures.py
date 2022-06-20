@@ -25,7 +25,7 @@ def annotate_peaks_against_kcds(list_peaks, list_compounds,
     KCD.mass_index_list_compounds(list_compounds)
     KCD.build_emp_cpds_index()
     KCD.export_mass_indexed_compounds(export_file_name_prefix+"KCD_mass_indexed_compounds.json")
-    EED = ExperimentalEcpdDatabase()
+    EED = ExperimentalEcpdDatabase(mode=mode, mz_tolerance_ppm=mz_tolerance_ppm)
     EED.build_from_list_peaks(list_peaks)
     EED.export_annotations(KCD, export_file_name_prefix)
 
@@ -536,7 +536,7 @@ class ExperimentalEcpdDatabase:
         Add new empCpds to self.dict_empCpds as new empCpds, and extend adduct search.
         '''
         formula_to_peaks = {}
-        found = self.singleton_formula_search(KCD, self.mz_tolerance_ppm)
+        found = self.singleton_formula_search(KCD)
         for p,F in found:
             k = F['neutral_formula']
             if k in formula_to_peaks:
