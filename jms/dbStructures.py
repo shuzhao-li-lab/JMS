@@ -15,7 +15,7 @@ from .data.list_formula_mass import list_formula_mass
 
 def annotate_peaks_against_kcds(list_peaks, list_compounds, 
                                 export_file_name_prefix='jms_annotated_',
-                                mode='pos',  mz_tolerance_ppm=5):
+                                mode='pos',  mz_tolerance_ppm=5, check_isotope_ratio = True):
     '''
     Wrapper function as example, to generate three annotation files for input list_peaks.
     list_compounds is known compound database, e.g.
@@ -26,7 +26,7 @@ def annotate_peaks_against_kcds(list_peaks, list_compounds,
     KCD.build_emp_cpds_index()
     KCD.export_mass_indexed_compounds(export_file_name_prefix+"KCD_mass_indexed_compounds.json")
     EED = ExperimentalEcpdDatabase(mode=mode, mz_tolerance_ppm=mz_tolerance_ppm)
-    EED.build_from_list_peaks(list_peaks)
+    EED.build_from_list_peaks(list_peaks, check_isotope_ratio)
     EED.export_annotations(KCD, export_file_name_prefix)
 
 
@@ -327,7 +327,11 @@ class ExperimentalEcpdDatabase:
         self.peak_to_empCpd = {}
         self.peak_to_empCpd_ion_relation = {}
 
+<<<<<<< HEAD
     def build_from_list_peaks(self, list_peaks, mz_tolerance_ppm=5, check_isotope_ratio = True):
+=======
+    def build_from_list_peaks(self, list_peaks, check_isotope_ratio = True):
+>>>>>>> 88a17cb7d9f78fc4b563e031e55f219a2df0b35f
         '''
         list of peaks, e.g. [ {'id_number': 555,        # change to 'id_number' throughout
                                 'mz': 133.0970, 
@@ -340,9 +344,15 @@ class ExperimentalEcpdDatabase:
         self.dict_empCpds = ECCON.peaks_to_epdDict(
                 seed_search_patterns = ECCON.seed_search_patterns, 
                 ext_search_patterns = ECCON.ext_search_patterns,
+<<<<<<< HEAD
                 mz_tolerance_ppm = mz_tolerance_ppm, 
                 coelution_function = 'overlap',
                 check_isotope_ratio = check_isotope_ratio,
+=======
+                mz_tolerance_ppm=5, 
+                coelution_function='overlap',
+                check_isotope_ratio = check_isotope_ratio
+>>>>>>> 88a17cb7d9f78fc4b563e031e55f219a2df0b35f
         ) 
         self.index_empCpds()
 
