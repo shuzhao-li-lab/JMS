@@ -81,7 +81,7 @@ def neutral_formula2mass(neutral_formula):
     if ("R" not in formula_dict) & ("X" not in formula_dict) & ("Z" not in formula_dict) & (len(formula_dict) != 0) :
         mono_mass = calculate_mass(formula_dict,6)
     else:
-        mono_mass = None
+        mono_mass = float(0)
     return(mono_mass)
 
 def remove_compartment_by_substr(Cpd_id,len_of_suffix):
