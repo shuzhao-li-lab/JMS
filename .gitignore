@@ -1,8 +1,16 @@
 # Mac
 .DS_Store
 
+# docker
+docker/*
+
 # test 
-test/
+test/*
+testdata/*
+
+# other documents
+presentation/*
+reference/*
 
 # history
 **/history/*
