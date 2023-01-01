@@ -27,6 +27,12 @@ involves two opposite problems.
 We are not using the identical set of isotopes and ions yet -
 they have different computational complexities, and it's not clear that we should. 
 
+# print("extended_adducts", extended_adducts)
+extended_adducts = {
+    'pos': [],
+    'neg': [],
+}
+
 '''
 isotopic_patterns = [
     # mass diff, isotopes, (intensity ratio constraint)
@@ -67,11 +73,6 @@ common_adducts = {
         (44.998201, 'COOH'),
         (59.013295, 'CH3COO'),
     ],
-}
-
-extended_adducts = {
-    'pos': [],
-    'neg': [],
 }
 
 # this does not include combinatorial values of isotopes and adducts

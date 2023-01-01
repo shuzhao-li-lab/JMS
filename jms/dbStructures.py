@@ -5,12 +5,18 @@ and to connect experimental data to empirical compounds.
 import json
 from operator import itemgetter
 import numpy as np
-from mass2chem.epdsConstructor import epdsConstructor
+
+from khipu.epdsConstructor import epdsConstructor
+# from mass2chem.epdsConstructor import epdsConstructor
+from khipu.utils import adduct_search_patterns, \
+                            adduct_search_patterns_neg, \
+                                isotope_search_patterns, \
+                                    extended_adducts
+
 from .search import *
 from .formula import *
 from .ions import compute_adducts_formulae, generate_ion_signature
 from .data.list_formula_mass import list_formula_mass
-
 
 
 def annotate_peaks_against_kcds(list_peaks, list_compounds, 
@@ -26,72 +32,8 @@ def annotate_peaks_against_kcds(list_peaks, list_compounds,
     KCD.build_emp_cpds_index()
     KCD.export_mass_indexed_compounds(export_file_name_prefix+"KCD_mass_indexed_compounds.json")
     EED = ExperimentalEcpdDatabase(mode=mode, mz_tolerance_ppm=mz_tolerance_ppm)
-    EED.build_from_list_peaks(list_peaks, check_isotope_ratio)
+    EED.build_from_list_peaks(list_peaks)
     EED.export_annotations(KCD, export_file_name_prefix)
-
-
-
-#----------------------------------------------------------------------------------------
-class empiricalCompound:
-    '''
-    Simple class, following exampe in metDataModel.
-    A template is:
-            {
-            "neutral_formula_mass": 268.08077, 
-            "neutral_formula": C10H12N4O5,
-            "alternative_formulas": [],
-            "interim_id": C10H12N4O5_268.08077,
-            "identity": [
-                    {'compounds': ['HMDB0000195'], 'names': ['Inosine'], 'score': 0.6, 'probability': null},
-                    {'compounds': ['HMDB0000195', 'HMDB0000481'], 'names': ['Inosine', 'Allopurinol riboside'], 'score': 0.1, 'probability': null},
-                    {'compounds': ['HMDB0000481'], 'names': ['Allopurinol riboside'], 'score': 0.1, 'probability': null},
-                    {'compounds': ['HMDB0003040''], 'names': ['Arabinosylhypoxanthine'], 'score': 0.05, 'probability': null},
-                    ],
-            "MS1_pseudo_Spectra": [
-                    {'id_number': 'FT1705', 'mz': 269.0878, 'rtime': 99.90, 'charged_formula': '', 'ion_relation': 'M+H[1+]'},
-                    {'id_number': 'FT1876', 'mz': 291.0697, 'rtime': 99.53, 'charged_formula': '', 'ion_relation': 'M+Na[1+]'},
-                    {'id_number': 'FT1721', 'mz': 270.0912, 'rtime': 99.91, 'charged_formula': '', 'ion_relation': 'M(C13)+H[1+]'},
-                    {'id_number': 'FT1993', 'mz': 307.0436, 'rtime': 99.79, 'charged_formula': '', 'ion_relation': 'M+K[1+]'},
-                    ],
-            "MS2_Spectra": ['AZ0000711', 'AZ0002101'],
-            "Database_referred": ["Azimuth", "HMDB", "MONA"],
-            }
-    '''
-    def __init__(self):
-        self.id = id                            # e.g. 'E00001234'
-        self.interim_id = ''
-        self.neutral_formula_mass = None
-        self.neutral_formula = ''
-        self.charged_formula = ''
-        self.charge = None
-        self.Database_referred = []
-        self.MS1_pseudo_Spectra = []            # list of features that belong to this empCpd
-        self.MS2_Spectra = []                   # MS2 identifiers can be universal (e.g. hashed ids)
-        self.identity = self.annotation = []    # see desired serialize() output; also in README
-
-    def read_json_model(self, jmodel):
-        self.interim_id = jmodel['interim_id']
-        self.neutral_formula_mass = jmodel['neutral_formula_mass'] = jmodel['neutral_mono_mass']
-        self.neutral_formula = jmodel['neutral_formula']
-        self.Database_referred = jmodel['Database_referred']
-        self.identity = jmodel['identity']
-        self.MS1_pseudo_Spectra  = jmodel['MS1_pseudo_Spectra']
-        self.MS2_Spectra = jmodel['MS2_Spectra']    
-
-    def serialize(self):
-        features = []
-        for peak in self.MS1_pseudo_Spectra:
-                features.append(        # this is given as example; one may need to modify the mapping variable names
-                   {"id_number": peak['id'], "mz": peak['mz'], "rtime": peak['rtime'], "charged_formula": "",  "ion_relation": peak['ion_relation'],}
-                )
-        return {'interim_id': self.interim_id, 
-                'neutral_formula_mass': self.neutral_formula_mass,
-                'neutral_formula': self.neutral_formula,
-                'Database_referred': self.Database_referred,
-                'identity': self.write_identity(),
-                'MS1_pseudo_Spectra': features,
-                'MS2_Spectra': self.MS2_Spectra,
-                }
 
 
 #----------------------------------------------------------------------------------------
@@ -329,20 +271,25 @@ class ExperimentalEcpdDatabase:
 
     def build_from_list_peaks(self, list_peaks, mz_tolerance_ppm=5, check_isotope_ratio = True):
         '''
-        list of peaks, e.g. [ {'id_number': 555,        # change to 'id_number' throughout
-                                'mz': 133.0970, 
-                                'apex': 654, 
-                                'height': 14388.0, ...
-                                }, ...]
+        list_peaks : [{'parent_masstrace_id': 1670, 'mz': 133.09702315984987, 'rtime': 654, 
+                'height': 14388.0, 'id_number': 555}, ...]
+        mz_tolerance_ppm: ppm tolerance in examining m/z patterns.
+
+        check_isotope_ratio : placeholder for now.
         '''
+        # add options to use search patterns as args
+        adduct_patterns = adduct_search_patterns
+        if self.mode == 'neg':
+            adduct_patterns = adduct_search_patterns_neg
+
         self.list_peaks = list_peaks
         ECCON = epdsConstructor(list_peaks, mode=self.mode)
         self.dict_empCpds = ECCON.peaks_to_epdDict(
-                seed_search_patterns = ECCON.seed_search_patterns, 
-                ext_search_patterns = ECCON.ext_search_patterns,
-                mz_tolerance_ppm = mz_tolerance_ppm, 
-                coelution_function = 'overlap',
-                check_isotope_ratio = check_isotope_ratio,
+                        isotope_search_patterns,
+                        adduct_patterns,
+                        extended_adducts,
+                        mz_tolerance_ppm,
+                        # rt_tolerance,
         ) 
         self.index_empCpds()
 
@@ -682,12 +629,13 @@ class ExperimentalEcpdDatabase:
 
     def update_annotation(self, KCD, peak_result_dict, adduct_patterns, mz_tolerance_ppm):
         '''
+        Placeholder. Not used now but for future consieration -
+
         Update self.dict_empCpds, and extend search by formula-based additional isotopes/adducts.
         Not updating indexing or peak to empCpd mapping.
 
         peak_result_dict: result from self.annotate_all_against_KCD, which
          contains annotation via empCpd, via singleton, or empCpd features as if singleton.
-
 
         '''
         
@@ -724,6 +672,8 @@ class ExperimentalEcpdDatabase:
 
         ECCON = epdsConstructor(remaining_peaks, mode=self.mode)
         list_empCpds = ECCON.extend_empCpds_by_formula_grid(
+
+
             self.dict_empCpds.values(), remaining_peaks, adduct_patterns, mz_tolerance_ppm=mz_tolerance_ppm,
         ) 
         # update self.dict_empCpds

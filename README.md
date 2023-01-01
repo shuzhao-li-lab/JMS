@@ -43,23 +43,31 @@ A few examples:
 {
     "neutral_formula_mass": 268.08077, 
     "neutral_formula": C10H12N4O5,
-    "biological_ion": '',
-    "biological_ion_charge": None,
     "alternative_formulas": [],
     "interim_id": C10H12N4O5_268.08077,
     "identity": [
-            {'compounds': ['HMDB0000195'], 'names': ['Inosine'], 'score': 0.6, 'probability': null},
-            {'compounds': ['HMDB0000195', 'HMDB0000481'], 'names': ['Inosine', 'Allopurinol riboside'], 'score': 0.1, 'probability': null},
-            {'compounds': ['HMDB0000481'], 'names': ['Allopurinol riboside'], 'score': 0.1, 'probability': null},
-            {'compounds': ['HMDB0003040''], 'names': ['Arabinosylhypoxanthine'], 'score': 0.05, 'probability': null},
+            {'compounds': ['HMDB0000195'], 'names': ['Inosine'], 
+                    'score': 0.6, 'probability': null},
+            {'compounds': ['HMDB0000195', 'HMDB0000481'], 'names': ['Inosine', 'Allopurinol riboside'], 
+                    'score': 0.1, 'probability': null},
+            {'compounds': ['HMDB0000481'], 'names': ['Allopurinol riboside'], 
+                    'score': 0.1, 'probability': null},
+            {'compounds': ['HMDB0003040''], 'names': ['Arabinosylhypoxanthine'], 
+                    'score': 0.05, 'probability': null},
             ],
     "MS1_pseudo_Spectra": [
-            {'feature_id': 'FT1705', 'mz': 269.0878, 'rtime': 99.90, 'charged_formula': '', 'ion_relation': 'M+H[1+]'},
-            {'feature_id': 'FT1876', 'mz': 291.0697, 'rtime': 99.53, 'charged_formula': '', 'ion_relation': 'M+Na[1+]'},
-            {'feature_id': 'FT1721', 'mz': 270.0912, 'rtime': 99.91, 'charged_formula': '', 'ion_relation': 'M(C13)+H[1+]'},
-            {'feature_id': 'FT1993', 'mz': 307.0436, 'rtime': 99.79, 'charged_formula': '', 'ion_relation': 'M+K[1+]'},
+            {'feature_id': 'FT1705', 'mz': 269.0878, 'rtime': 99.90, 
+                    'isotope': 'M0', 'modification': '+H', 'charged_formula': '', 'ion_relation': 'M+H[1+]'},
+            {'feature_id': 'FT1876', 'mz': 291.0697, 'rtime': 99.53, 
+                    'isotope': 'M0', 'modification': '+Na', 'charged_formula': '', 'ion_relation': 'M+Na[1+]'},
+            {'feature_id': 'FT1721', 'mz': 270.0912, 'rtime': 99.91, 
+                    'isotope': '13C', 'modification': '+H', 'charged_formula': '', 'ion_relation': 'M(C13)+H[1+]'},
+            {'feature_id': 'FT1993', 'mz': 307.0436, 'rtime': 99.79, 
+                    'isotope': 'M0', 'modification': '+K', 'charged_formula': '', 'ion_relation': 'M+K[1+]'},
             ],
-    "MS2_Spectra": ['AZ0000711', 'AZ0002101'],
+    "MS2_Spectra": [
+            'AZ0000711', 'AZ0002101'
+            ],
     "Database_referred": ["Azimuth", "HMDB", "MONA"],
 }
 ```
@@ -83,7 +91,15 @@ How to use
 
 See notebooks under docs/ for demonstration.
 
-Example code of annotating a feature table against HMDB:
+Run test:
+```
+# decompress the HMDB4 data if needed
+➜  JMS✗ xz -d jms/data/compounds/list_compounds_HMDB4.json.xz 
+# run test from top dir
+➜  JMS✗ python3 -m jms.test 
+```
+
+Example code of annotating a feature table against HMDB as in test.py:
 
 ```
 import json
@@ -91,7 +107,7 @@ from jms.dbStructures import annotate_peaks_against_kcds
 from jms.io import read_table_to_peaks
 
 list_compounds = json.load(open('jms/data/compounds/list_compounds_HMDB4.json'))
-mydata = read_table_to_peaks('pos_cmap_feature_table.csv', ',')
+mydata = read_table_to_peaks('testdata/full_Feature_table.tsv', '\t')
 
 annotate_peaks_against_kcds(mydata, list_compounds, 
                                 export_file_name_prefix='jms_annotated_',
