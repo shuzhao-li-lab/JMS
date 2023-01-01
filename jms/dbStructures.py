@@ -481,6 +481,7 @@ class ExperimentalEcpdDatabase:
         '''
         Search singletons for formulae first by KCD search then .data.formula_tree.
         Add new empCpds to self.dict_empCpds as new empCpds, and extend adduct search.
+        Assign new identifiers as (10000 +number of dict_empCpds + numerical count).
         '''
         formula_to_peaks = {}
         found = self.singleton_formula_search(KCD)
@@ -496,7 +497,7 @@ class ExperimentalEcpdDatabase:
                                                   P['id_number'] not in found_peaks]
         peakTree = build_centurion_tree(peakList)
 
-        new_id_start = max(self.dict_empCpds.keys())
+        new_id_start = len(self.dict_empCpds) + 10000
         for formula, PP in formula_to_peaks.items():
             neutral_formula_mass = PP[0][1]['neutral_formula_mass']
             P1 = self.dict_peaks[PP[0][0]]
