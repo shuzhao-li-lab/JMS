@@ -78,13 +78,12 @@ With consistent core concepts, some simple mapping dictionaries will produce int
 
 In empirical compound, MS1_pseudo_Spectra are for adduction ions (A-ions); the biological_ion is usually different (B-ions).
 
-Packaging
-=========
 
-The PyPi package excludes subdirectories in /data.
+Install
+=======
 
+`pip install jms-metabolite-services`
 
-The App Engine web tool is in a different repository.
 
 How to use
 ==========
@@ -114,18 +113,30 @@ annotate_peaks_against_kcds(mydata, list_compounds,
                                 mode='pos',  mz_tolerance_ppm=5)
 ```
 
-Related libraries and tools
-===========================
+Links
+=====
+Source code: https://github.com/shuzhao-li/JMS
+
+Package Repository: https://pypi.org/project/jms-metabolite-services/
+
+Related projects:
 
 metDataModel: data models for metabolomics
 
 mass2chem: common utilities in interpreting mass spectrometry data, annotation
 
+khipu: a Python library for generalized, low-level annotation of MS metabolomics
+
 Asari: trackable and scalable LC-MS data preprocessing
 
-mummichog(3)
+mummichog: metabolomics pathway/network analysis
 
-Azimuth DB: the chemical database for biology, including metabolic models
+
+Dev notes
+=========
+The PyPi package excludes subdirectories in /data.
+
+The App Engine web tool will be in a different repository.
 
 
 Citation

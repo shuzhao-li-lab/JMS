@@ -1,2 +1,2 @@
 mass2chem
-khipu-metabolomics>0.5.1
+khipu-metabolomics>0.5.0
