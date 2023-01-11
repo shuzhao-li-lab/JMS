@@ -282,6 +282,19 @@ class ExperimentalEcpdDatabase:
         if self.mode == 'neg':
             adduct_patterns = adduct_search_patterns_neg
 
+        # check if intensity value is provided
+        if 'representative_intensity' not in list_peaks[0]:
+            if 'peak_area' in list_peaks[0]:
+                for p in list_peaks:
+                    p['representative_intensity'] = p['peak_area']
+            elif 'height' in list_peaks[0]:
+                for p in list_peaks:
+                    p['representative_intensity'] = p['height']
+            else:
+                print("Warning: cannot get representative_intensity..")
+                for p in list_peaks:
+                    p['representative_intensity'] = 0
+
         self.list_peaks = list_peaks
         ECCON = epdsConstructor(list_peaks, mode=self.mode)
         self.dict_empCpds = ECCON.peaks_to_epdDict(
