@@ -218,19 +218,22 @@ class knownCompoundDatabase:
         results = []
         if emp_cpd['neutral_formula_mass']:
             matches = self.search_mz_single(emp_cpd['neutral_formula_mass'], 'neutral', mz_tolerance_ppm)
+            for _M in matches:
+                results.append((_M['parent_epd_id'],
+                                _M['ion_relation'], 1))
         else:
             query_mzs = [x['mz'] for x in emp_cpd['MS1_pseudo_Spectra']]
             # look for anchor ion first; default first ion in 'MS1_pseudo_Spectra'
             matches = self.search_mz_single(query_mzs[0], mode, mz_tolerance_ppm)
             # format - [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}, ...]
-        for _M in matches:
-            R = self.mass_indexed_compounds[_M['parent_epd_id']]
-            # compute_adducts_formulae considers both isotopes and adducts
-            db_peaks = compute_adducts_formulae(R['neutral_formula_mass'], R['neutral_formula'], mode)
-            results.append((_M['parent_epd_id'],
-                            _M['ion_relation'],     # ion_relation btw anchor and DB record, not ions in empCpd
-                            score_emp_cpd_matches(query_mzs, [x[0] for x in db_peaks], mz_tolerance_ppm), 
-                    ))
+            for _M in matches:
+                R = self.mass_indexed_compounds[_M['parent_epd_id']]
+                # compute_adducts_formulae considers both isotopes and adducts
+                db_peaks = compute_adducts_formulae(R['neutral_formula_mass'], R['neutral_formula'], mode)
+                results.append((_M['parent_epd_id'],
+                                _M['ion_relation'],     # ion_relation btw anchor and DB record, not ions in empCpd
+                                score_emp_cpd_matches(query_mzs, [x[0] for x in db_peaks], mz_tolerance_ppm), 
+                        ))
         return sorted(results, key=itemgetter(2), reverse=True)
         
     def search_emp_cpd_batch(self, list_emp_cpd, mode='pos', mz_tolerance_ppm=5):
