@@ -439,9 +439,16 @@ class ExperimentalEcpdDatabase:
 
     # Annotation functions
     def extend_empCpd_annotation(self, KCD):
+        '''
+        Before khipu:
         self.empCpds_formula_search(KCD)
-        # Hold off from khipu results.
-        # self.__extend_empCpds__()
+        self.__extend_empCpds__()
+        '''
+        epd_search_result_dict = self.annotate_empCpds_against_KCD(KCD, self.mz_tolerance_ppm)
+        for interim_id, V in epd_search_result_dict.items():
+            if V:
+                self.dict_empCpds[interim_id]['list_matches'] = V
+
 
     def empCpds_formula_search(self, KCD):
         '''
@@ -454,8 +461,8 @@ class ExperimentalEcpdDatabase:
                 # update empCpd with formula matches
                 self.dict_empCpds[interim_id]['list_matches'] = V
                 #       expecting probem from khipu to this
-                # self.dict_empCpds[interim_id]['neutral_formula'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula']
-                # self.dict_empCpds[interim_id]['neutral_formula_mass'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula_mass']
+                self.dict_empCpds[interim_id]['neutral_formula'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula']
+                self.dict_empCpds[interim_id]['neutral_formula_mass'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula_mass']
             else:
                 # first peak should be anchor
                 anchor_mz = self.dict_empCpds[interim_id]['MS1_pseudo_Spectra'][0]['mz']
