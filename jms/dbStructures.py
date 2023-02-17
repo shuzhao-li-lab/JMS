@@ -43,7 +43,7 @@ class knownCompoundDatabase:
     One can search by mass or mass tree (patterns of isotopes/adducts, in the form of empCpd).
     centurion_mass_tree is an indexed dictionary to group ions by 100th decimal.
     An empCpd is an empirical compound, a set of features drived from the same mass (see README), 
-    which of include isomers.
+    which often include isomers.
     '''
     def __init__(self):
         '''
@@ -51,7 +51,10 @@ class knownCompoundDatabase:
         The latter is indexed for searches, separately for positive and negative ion modes.
         '''
         self.mass_indexed_compounds = {}
-        self.emp_cpds_trees = { 'pos': {}, 'neg': {} }
+        self.emp_cpds_trees = { 'pos': {}, 
+                                'neg': {},
+                                'neutral': {},
+                                }
         
     def mass_index_list_compounds(self, list_compounds):
         '''
@@ -122,9 +125,15 @@ class knownCompoundDatabase:
         if include_C13:
             __ion_generator__ = generate_ion_signature
 
-        pos_peak_list, neg_peak_list = [], []
+        pos_peak_list, neg_peak_list, neutral_peak_list = [], [], []
         pos_epd_ions, neg_epd_ions = {}, {}     # dictionaries using same keys as self.mass_indexed_compounds
         for k, v in self.mass_indexed_compounds.items():
+            # neutral
+            neutral_peak_list.append(
+                {'mz': v['neutral_formula_mass'], 'parent_epd_id': k, 'ion_relation': '',}
+            )
+
+            # do pos ions now
             __LL = __ion_generator__(v['neutral_formula_mass'], v['neutral_formula'], mode='pos', primary_only=True)
             # signature format e.g. [[304.203251, 'M[1+]', 'C19H28O3'], ...]
             pos_epd_ions[k] = __LL
@@ -140,6 +149,7 @@ class knownCompoundDatabase:
         # map peaks -> empCpd
         self.emp_cpds_trees['pos'] = build_centurion_tree(pos_peak_list)
         self.emp_cpds_trees['neg'] = build_centurion_tree(neg_peak_list)
+        self.emp_cpds_trees['neutral'] = build_centurion_tree(neutral_peak_list)
 
     def search_mz_single(self, query_mz, mode='pos', mz_tolerance_ppm=5):
         '''
@@ -178,7 +188,9 @@ class knownCompoundDatabase:
 
     def search_emp_cpd_single(self, emp_cpd, mode='pos', mz_tolerance_ppm=5):
         '''
-        emp_cpd format has to follow (loosely) specificiations in metDataModel, requiring anchor ion, e.g.
+        If input emp_cpd is from khipu, neutral_formula_mass is usually alrady assigned. 
+        This is simple search on neutral_formula_mass.
+        Otherwise, emp_cpd format has to follow (loosely) specificiations in metDataModel, requiring anchor ion, e.g.
         {interim_id': 12,
         'neutral_formula_mass': None,
         'neutral_formula': None,
@@ -204,10 +216,13 @@ class knownCompoundDatabase:
         The score is number of matched ions.
         '''
         results = []
-        query_mzs = [x['mz'] for x in emp_cpd['MS1_pseudo_Spectra']]
-        # look for anchor ion first; default first ion in 'MS1_pseudo_Spectra'
-        matches = self.search_mz_single(query_mzs[0], mode, mz_tolerance_ppm)
-        # format - [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}, ...]
+        if emp_cpd['neutral_formula_mass']:
+            matches = self.search_mz_single(emp_cpd['neutral_formula_mass'], 'neutral', mz_tolerance_ppm)
+        else:
+            query_mzs = [x['mz'] for x in emp_cpd['MS1_pseudo_Spectra']]
+            # look for anchor ion first; default first ion in 'MS1_pseudo_Spectra'
+            matches = self.search_mz_single(query_mzs[0], mode, mz_tolerance_ppm)
+            # format - [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}, ...]
         for _M in matches:
             R = self.mass_indexed_compounds[_M['parent_epd_id']]
             # compute_adducts_formulae considers both isotopes and adducts
