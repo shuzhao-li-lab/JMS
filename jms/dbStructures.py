@@ -440,7 +440,8 @@ class ExperimentalEcpdDatabase:
     # Annotation functions
     def extend_empCpd_annotation(self, KCD):
         self.empCpds_formula_search(KCD)
-        self.__extend_empCpds__()
+        # Hold off from khipu results.
+        # self.__extend_empCpds__()
 
     def empCpds_formula_search(self, KCD):
         '''
@@ -452,8 +453,9 @@ class ExperimentalEcpdDatabase:
             if V:
                 # update empCpd with formula matches
                 self.dict_empCpds[interim_id]['list_matches'] = V
-                self.dict_empCpds[interim_id]['neutral_formula'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula']
-                self.dict_empCpds[interim_id]['neutral_formula_mass'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula_mass']
+                #       expecting probem from khipu to this
+                # self.dict_empCpds[interim_id]['neutral_formula'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula']
+                # self.dict_empCpds[interim_id]['neutral_formula_mass'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula_mass']
             else:
                 # first peak should be anchor
                 anchor_mz = self.dict_empCpds[interim_id]['MS1_pseudo_Spectra'][0]['mz']
@@ -466,6 +468,8 @@ class ExperimentalEcpdDatabase:
         '''
         Extend empCpds by 
         additional isotopes/adducts, based on mass2chem.formula.compute_adducts_formulae
+
+        Hold off from khipu results.
         '''
         peakList = [P for P in self.list_peaks if P['id_number'] not in self.peak_to_empCpd]
         peakTree = build_centurion_tree(peakList)
