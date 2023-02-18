@@ -271,14 +271,21 @@ class ExperimentalEcpdDatabase:
     4) formula based grid search to extend all empCpds
 
     self.dict_empCpds is updated in situ.
+    Not using check_isotope_ratios. First pass by khipu generates JSON annotations, 
+        where ratios can be calculated after.
     '''
-    def __init__(self, mode='pos', mz_tolerance_ppm=5):
+    def __init__(self, mode='pos', mz_tolerance_ppm=5, rt_tolerance=2):
         '''
         mode: ionizaation mode, 'pos' or 'neg'.
-        Take input list of peaks. Peaks here are usually features.
+        mz_tolerance_ppm: ppm tolerance in examining m/z patterns.
+        rt_tolerance: tolerance threshold for deviation in retetion time, arbitrary unit depending on input data.
+                Default intended as 2 seconds.
+        Takes input list of peaks. Peaks here are usually features.
         '''
         self.mode = mode
         self.mz_tolerance_ppm = mz_tolerance_ppm
+        self.rt_tolerance = rt_tolerance
+        self.get_isotope_adduct_patterns()
         self.list_peaks = []
         self.indexed_peaks = {}
         self.dict_peaks = {}
@@ -287,19 +294,29 @@ class ExperimentalEcpdDatabase:
         self.peak_to_empCpd = {}
         self.peak_to_empCpd_ion_relation = {}
 
-    def build_from_list_peaks(self, list_peaks, mz_tolerance_ppm=5, check_isotope_ratio = True):
+    def get_isotope_adduct_patterns(self):
         '''
+        Populate isotope/adduct patterns for this instance.
+        The isotope/adduct patterns here are imported from khipu as global variables here.
+        '''
+        self.adduct_patterns = adduct_search_patterns
+        if self.mode == 'neg':
+            self.adduct_patterns = adduct_search_patterns_neg
+        self.isotope_search_patterns = isotope_search_patterns
+        self.extended_adducts = extended_adducts
+
+    def build_from_list_peaks(self, list_peaks):
+        '''
+        Wrapper of khipu epdsConstructor.
+        Updates self.dict_empCpds and does self.index_empCpds().
+
         list_peaks : [{'parent_masstrace_id': 1670, 'mz': 133.09702315984987, 'rtime': 654, 
                 'height': 14388.0, 'id_number': 555}, ...]
-        mz_tolerance_ppm: ppm tolerance in examining m/z patterns.
+        isotope/adduct patterns, mz_tolerance_ppm and rt_tolerance are from self,
+        as they are parameters to this class.
 
-        check_isotope_ratio : placeholder for now.
+        Future updates can include enforcing overlap in scans not just rtime tolerance.
         '''
-        # add options to use search patterns as args
-        adduct_patterns = adduct_search_patterns
-        if self.mode == 'neg':
-            adduct_patterns = adduct_search_patterns_neg
-
         # check if intensity value is provided
         if 'representative_intensity' not in list_peaks[0]:
             if 'peak_area' in list_peaks[0]:
@@ -316,11 +333,11 @@ class ExperimentalEcpdDatabase:
         self.list_peaks = list_peaks
         ECCON = epdsConstructor(list_peaks, mode=self.mode)
         self.dict_empCpds = ECCON.peaks_to_epdDict(
-                        isotope_search_patterns,
-                        adduct_patterns,
-                        extended_adducts,
-                        mz_tolerance_ppm,
-                        # rt_tolerance,
+                        self.isotope_search_patterns,
+                        self.adduct_patterns,
+                        self.extended_adducts,
+                        self.mz_tolerance_ppm,
+                        self.rt_tolerance,
         ) 
         self.index_empCpds()
 
