@@ -11,6 +11,30 @@ Out[5]:
 
 '''
 
+from khipu.utils import adduct_search_patterns, \
+                            adduct_search_patterns_neg, \
+                                isotope_search_patterns, \
+                                    extended_adducts
+
+
+dev_isotopic_patterns = [
+    # mass diff, isotopes, (intensity ratio constraint)
+    (1.003355, '13C/12C', (0, 0.8)),      # 13C-12C, 12C~99%, 13C ~ 1%
+    (0.997035, '15N/14N', (0, 0.2)),     # 15N-14N, 14N ~ 99.64%, 15N ~ 0.36%
+    (2.004245, '18O/16O', (0, 0.2)),      # 18O-16O, 16O ~ 99.76, 16O ~ 0.2%
+    (1.995796, '34S/32S', (0, 0.4)),      # 32S (95.02%), 33S (0.75%), 34S (4.21%)
+    (0.999388, '33S/32S', (0, 0.1)),
+    # double isotopes
+    (2.00039, 'M(13C),M(15N)', (0, 0.2)),
+    (2.999151, 'M(13C),M(34S)', (0, 0.4)),
+    # double charged
+    (0.5017, '13C/12C, double charged', (0, 0.8)),
+    (0.4985, '15N/14N, double charged', (0, 0.2)),
+]
+
+#
+# -----------------------------------------------------------------------------
+#
 
 from mass2chem.formula import compute_adducts_formulae
 

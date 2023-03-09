@@ -20,71 +20,7 @@ Out[17]:
   'cSelectivity': '0.1015625',
   'goodness_fitting': '0.7678341743874929',
   'snr': '3'}]
-
-
-Handling degenerate peaks in experimental data vs theoretical compounds 
-involves two opposite problems.
-We are not using the identical set of isotopes and ions yet -
-they have different computational complexities, and it's not clear that we should. 
-
-# print("extended_adducts", extended_adducts)
-extended_adducts = {
-    'pos': [],
-    'neg': [],
-}
-
 '''
-isotopic_patterns = [
-    # mass diff, isotopes, (intensity ratio constraint)
-    (1.003355, '13C/12C', (0, 0.8)),      # 13C-12C, 12C~99%, 13C ~ 1%
-    (0.997035, '15N/14N', (0, 0.2)),     # 15N-14N, 14N ~ 99.64%, 15N ~ 0.36%
-    (2.004245, '18O/16O', (0, 0.2)),      # 18O-16O, 16O ~ 99.76, 16O ~ 0.2%
-    (1.995796, '34S/32S', (0, 0.4)),      # 32S (95.02%), 33S (0.75%), 34S (4.21%)
-    (0.999388, '33S/32S', (0, 0.1)),
-    # double isotopes
-    (2.00039, 'M(13C),M(15N)', (0, 0.2)),
-    (2.999151, 'M(13C),M(34S)', (0, 0.4)),
-    # double charged
-    (0.5017, '13C/12C, double charged', (0, 0.8)),
-    (0.4985, '15N/14N, double charged', (0, 0.2)),
-]
-
-common_adducts = {
-    # mass diff, modification
-    # not using (intensity ratio constraint), but it can be documented or learned
-    'pos': [
-        (1.0078, 'H'),
-        (21.9820, 'Na/H'), # Na replacing H
-        (10.991, 'Na/H, double charged'),
-        (18.0106, '+H2O'), 
-        (18.033823, '+NH4'),
-        (37.9559, '39K/H'),
-        (39.9540, '41K/H'),
-        (41.026549, 'Acetonitrile'),
-    ],
-    'neg': [
-        (1.0078, 'H'),
-        (22.9893, 'Na'),
-        (20.97474706646, '+Na-2H'),
-        (18.0106, 'H2O'), 
-        (34.9689, '35Cl'),
-        (36.9659, '37Cl'),
-        (40.01926853323, '+ACN-H'),
-        (44.998201, 'COOH'),
-        (59.013295, 'CH3COO'),
-    ],
-}
-
-# this does not include combinatorial values of isotopes and adducts
-# Mostly used as seeds; better to do inclusive search after matched to formulae
-seed_empCpd_patterns = {
-    'pos': [(1.003355, '13C/12C', (0, 0.8)), (1.0078, 'H'), (21.9820, 'Na/H'), ],
-    'neg': [(1.003355, '13C/12C', (0, 0.8)), (1.0078, 'H'), (20.97474706646, '+Na-2H'), (34.9689, '35Cl')],
-}
-
-#
-# -----------------------------------------------------------------------------
-#
 
 def build_centurion_tree(list_peaks):
     '''
@@ -252,10 +188,6 @@ def search_formulae(list_peaks, db_tree):
 
 
     pass
-
-
-
-
 
 
 

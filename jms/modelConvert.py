@@ -5,27 +5,12 @@ Started in mummichog 2.6, but moving to this repo and will continue with mummich
 
 '''
 
-
-import json
-import numpy as np
-import networkx as nx
-
-from .ions import compute_isotopes_adducts
-
-from .JSON_metabolicModels import metabolicModels
-from .compound_dicts import hmdb_dict, kegg_dict
-
-# 
-# for porting GEMs
-# see https://github.com/shuzhao-li/Azimuth/tree/master/docs
-#
-
-
-
-def json_convert_azmuth_mummichog(jmodel):
+def convert_json_model(jmodel):
     '''
     The jmodel was parsed from one of the Genome scale metabolic models. 
     All compound identifiers and other identifiers are expected to be contained within the model.
+    Returns model dictionary with indexing, as in mummichog style.
+
     >>> jmodel.keys()
         dict_keys(['id', 'list_of_reactions', 'list_of_compounds', 'list_of_pathways', 'meta_data'])
     >>> jmodel['list_of_compounds'][772]
@@ -56,7 +41,7 @@ def json_convert_azmuth_mummichog(jmodel):
     new['version'] = jmodel['meta_data']['version']
     cpdDict,  dict_cpds_def = {}, {}
     for cpd in jmodel['list_of_compounds']:
-        cpdDict[cpd['id']] = convert_compound_azimuth_mummichog(cpd, hmdb_dict, kegg_dict)
+        cpdDict[cpd['id']] = cpd    # convert_compound_azimuth_mummichog(cpd, hmdb_dict, kegg_dict)
         dict_cpds_def[cpd['id']] = cpd['name']
     new['Compounds'] = cpdDict
     new['dict_cpds_def'] = dict_cpds_def
@@ -74,10 +59,9 @@ def json_convert_azmuth_mummichog(jmodel):
                 cpd_edges.append(k)
                 _edges.append(k)
                 edge2rxn[','.join(sorted(k))] = rxn['id']
-                # enzymes not in current test model and not tested ------------------ watch out for this, could be rxn['ecs']
-                if 'enzymes' in rxn:
-                    for e in rxn['enzymes']:
-                        edge2enzyme[','.join(sorted(k))] = e
+                enzymes = rxn.get('ecs', []) or rxn.get('enzymes', [])
+                for e in enzymes:
+                    edge2enzyme[','.join(sorted(k))] = e
 
     new['cpd_edges'] = cpd_edges
     new['edge2rxn'] = edge2rxn
@@ -89,15 +73,17 @@ def json_convert_azmuth_mummichog(jmodel):
         _p['id'] = P['id']
         _p['name'] = P['name']
         _p['rxns'] = P['list_of_reactions']
-        cpds, ecs = [], []
+        cpds, ecs, genes = [], [], []
         for ii in P['list_of_reactions']:
             rxn = dict_rxns[ii]
             cpds += rxn['reactants'] + rxn['products']
-            # enzymes not in current test model and not tested ------------------ watch out for this, could be rxn['ecs']
-            if 'enzymes' in rxn:
-                ecs += rxn['enzymes']
+            enzymes = rxn.get('ecs', []) or rxn.get('enzymes', [])
+            ecs += enzymes
+            if 'genes' in rxn:
+                genes += rxn['genes']
         _p['cpds'] = list(set(cpds))
         _p['ecs'] = list(set(ecs))
+        _p['genes'] = list(set(genes))
         metabolic_pathways.append(_p)
 
     cpd2pathways = {}
@@ -112,35 +98,3 @@ def json_convert_azmuth_mummichog(jmodel):
     new['cpd2pathways'] = cpd2pathways
 
     return new
-
-
-def convert_compound_azimuth_mummichog(cpd, hmdb_dict, kegg_dict):
-    '''
-    In mummichog 2, compound takes the format of
-    cpd format: {'formula': 'C29H51N2O8PRS', 'mw': 0, 'name': 'linoelaidic acid ACP (all trans)', 'adducts': {}}
-    So mw = neutral_mono_mass; formula = neutral_formula.
-    We built compound dictionaries on HMDB and KEGG separately, as id: (formula, mass).
-    Return compound in mummichog 2 format.
-    '''
-    new = {}
-    new['id'] = cpd['id']
-    new['name'] = cpd['name']
-    new['formula'] = cpd['neutral_formula']
-    new['mw'] = cpd['neutral_mono_mass']
-    if new['formula'] and new['mw'] > 1:        # both valid
-        return new
-    else:
-        hmdb = cpd['identifiers'].get('hmdb', '')
-        if hmdb:
-            try:
-                new['formula'], new['mw'] = hmdb_dict[hmdb]
-            except KeyError:
-                pass
-        else:
-            kegg = cpd['identifiers'].get('kegg.compound', '')
-            if kegg:
-                try:
-                    new['formula'], new['mw'] = kegg_dict[kegg]
-                except KeyError:
-                    pass
-        return new

@@ -3,6 +3,38 @@ A place to store some prototype or experimental code,
 which may be garbage or useful in someway elsewhere.
 '''
 
+# obsolete; should use khipu
+dev_common_adducts = {
+    # mass diff, modification
+    # not using (intensity ratio constraint), but it can be documented or learned
+    'pos': [
+        (1.0078, 'H'),
+        (21.9820, 'Na/H'), # Na replacing H
+        (10.991, 'Na/H, double charged'),
+        (18.0106, '+H2O'), 
+        (18.033823, '+NH4'),
+        (37.9559, '39K/H'),
+        (39.9540, '41K/H'),
+        (41.026549, 'Acetonitrile'),
+    ],
+    'neg': [
+        (1.0078, 'H'),
+        (22.9893, 'Na'),
+        (20.97474706646, '+Na-2H'),
+        (18.0106, 'H2O'), 
+        (34.9689, '35Cl'),
+        (36.9659, '37Cl'),
+        (40.01926853323, '+ACN-H'),
+        (44.998201, 'COOH'),
+        (59.013295, 'CH3COO'),
+    ],
+}
+
+# obsolete; should use khipu
+dev_seed_empCpd_patterns = {
+    'pos': [(1.003355, '13C/12C', (0, 0.8)), (1.0078, 'H'), (21.9820, 'Na/H'), ],
+    'neg': [(1.003355, '13C/12C', (0, 0.8)), (1.0078, 'H'), (20.97474706646, '+Na-2H'), (34.9689, '35Cl')],
+}
 
 
 #----------------------------------------------------------------------------------------

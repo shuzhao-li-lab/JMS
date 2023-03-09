@@ -7,7 +7,7 @@ from operator import itemgetter
 import numpy as np
 
 from khipu.epdsConstructor import epdsConstructor
-# from mass2chem.epdsConstructor import epdsConstructor
+
 from khipu.utils import adduct_search_patterns, \
                             adduct_search_patterns_neg, \
                                 isotope_search_patterns, \
@@ -26,6 +26,7 @@ def annotate_peaks_against_kcds(list_peaks, list_compounds,
     Wrapper function as example, to generate three annotation files for input list_peaks.
     list_compounds is known compound database, e.g.
     list_compounds = json.load(open('jms/data/compounds/list_compounds_HMDB4.json'))
+    
     '''
     KCD = knownCompoundDatabase()
     KCD.mass_index_list_compounds(list_compounds)
