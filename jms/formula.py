@@ -33,10 +33,27 @@ def search_mz_formula_tree(mz, formula_tree, limit_ppm=5):
     '''
     return find_best_match_centurion_indexed_list(mz, formula_tree, limit_ppm)
 
-def adjust_charge_in_formula(charged_formula,charge): 
-    '''
-    adjust charged formula to neutral formula
-    '''
+def adjust_charge_in_formula(charged_formula:str,charge:int)->str: 
+    """adjust charged formula to neutral formula
+
+    Parameters
+    ----------
+    charged_formula : str
+        charged formula
+    charge : int
+        charge
+
+    Returns
+    -------
+    str
+        neutral formula
+
+    Examples
+    --------
+    >>> adjust_charge_in_formula('C17H31O2',-1)
+    'C17H32O2'
+    
+    """ 
     if charge == 0:
         result = charged_formula
     else:
@@ -50,4 +67,4 @@ def adjust_charge_in_formula(charged_formula,charge):
                 result = None
             else:  # if charge >0, e.g., Fe, charge is 2+; it should still be Fe as formula
                 result = charged_formula # here dealing with Metal etc.
-    return(result)
+    return result

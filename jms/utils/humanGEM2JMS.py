@@ -24,6 +24,7 @@
 # 
 # Shuzhao Li, 2021-10-21|
 # Minghao Gong, 2022-04-19
+# Yuanye Chi 2023-03-21
 
 # !pip install cobra --user --ignore-installed ruamel.yaml
 # !pip install --upgrade metDataModel # https://github.com/shuzhao-li/metDataModel/ 
@@ -36,14 +37,14 @@ import sys
 import os
 from datetime import datetime
 
-sys.path.append("/Users/gongm/Documents/projects/mass2chem/")
-sys.path.append("/Users/gongm/Documents/projects/JMS/JMS/JMS")
+# sys.path.append("/Users/gongm/Documents/projects/mass2chem/")
+# sys.path.append("/Users/gongm/Documents/projects/JMS/JMS/JMS")
 from mass2chem.formula import *
 from jms.formula import *
 from jms.utils.gems import *
 
 # The path you intended to save
-output_fdr = '../../testdata/HumanGEM/'
+output_fdr = './testdata/HumanGEM/'
 name_xml = 'Human-GEM.xml'
 github_xml_path = 'https://github.com/SysBioChalmers/Human-GEM/blob/main/model/Human-GEM.xml'
 
@@ -51,6 +52,7 @@ github_xml_path = 'https://github.com/SysBioChalmers/Human-GEM/blob/main/model/H
 today =  str(datetime.today()).split(" ")[0]
 
 note = """Human-GEM compartmentalized, with genes and ECs."""
+pathway_source = "Human-GEM v1.10.0"
 
 metadata = {
             'species': 'human',
@@ -75,15 +77,28 @@ model = cobra.io.read_sbml_model(xmlFile)
 
 # Port metabolite
 
-def port_metabolite(M):
+def port_metabolite(M:cobra.core.metabolite.Metabolite):
+    """convert cobra Metabolite to metDataModel Compound
+    
+    Parameters
+    ----------
+    M : cobra.core.metabolite.Metabolite
+        metabolites read by Cobra
+
+    Returns
+    -------
+    metDataModel.core.Compound
+        compound form in metDataModel
+     
+    """
     # convert cobra Metabolite to metDataModel Compound
     Cpd = Compound()
     Cpd.src_id = remove_compartment_by_substr(M.id,1)
     Cpd.id = remove_compartment_by_substr(M.id,1)              # temporarily the same with the source id
     Cpd.name = M.name
     Cpd.charge = M.charge
-    Cpd.neutral_formula = adjust_charge_in_formula(M.formula,M.charge)
-    Cpd.neutral_mono_mass = neutral_formula2mass(Cpd.neutral_formula)
+    Cpd.neutral_formula = None if M.formula is None else adjust_charge_in_formula(M.formula,M.charge)  # some of the compounds have no formula.
+    Cpd.neutral_mono_mass = None if Cpd.neutral_formula is None else neutral_formula2mass(Cpd.neutral_formula)
     Cpd.charged_formula = M.formula
     Cpd.db_ids = [['humanGEM',Cpd.src_id]] # using src_id to also reference humanGEM ID in db_ids field
     for k,v in M.annotation.items():
@@ -118,7 +133,20 @@ print(f'After decompartmentalization, there are {len(myCpds)} compounds left')
 
 # Port reactions
 # port reactions, to include genes and enzymes
-def port_reaction(R):
+def port_reaction(R:cobra.core.reaction.Reaction):
+    """Port reactions, to include genes and enzymes
+
+    Parameters
+    ----------
+    R : cobra.core.reaction.Reaction
+        reactions read by Cobra
+
+    Returns
+    -------
+    metDataModel.core.Reaction
+        reaction form in metDataModel
+     
+    """
     new = Reaction()
     new.id = R.id
     new.reactants = [remove_compartment_by_substr(m.id,1) for m in R.reactants] # decompartmentalization
@@ -146,10 +174,23 @@ print(f'After removing transport reactions, there are {len(myRxns)} reactions')
 # ## Port pathway
 # pathways, using group as pathway. Other models may use subsystem etc.
 
-def port_pathway(P):
+def port_pathway(P:cobra.core.group.Group):
+    """pathways, using group as pathway. Other models may use subsystem etc.
+
+    Parameters
+    ----------
+    P : cobra.core.group.Group
+        pathways read by Cobra
+
+    Returns
+    -------
+    metDataModel.core.Pathway
+        pathway form in metDataModel
+     
+    """
     new = Pathway()
     new.id = P.id
-    new.source = ['Human-GEM v1.10.0',]
+    new.source = [pathway_source,]
     new.name = P.name
     new.list_of_reactions = [x.id for x in P.members]
     return new

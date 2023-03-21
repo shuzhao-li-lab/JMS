@@ -3,10 +3,10 @@ import pickle
 import json
 import pandas as pd
 import re
+
 from jms.utils.git_download import * 
 from jms.formula import *
 
-sys.path.append("/Users/gongm/Documents/projects/mass2chem/")
 from mass2chem.formula import *
 
 def list_all_identifiers(cobra_model,notes):
@@ -73,25 +73,58 @@ def listOfTuple2dict(tuples, delimiter = None):
                 res_dict[db_name] = ', '.join(db_ids)
     return res_dict
 
-def neutral_formula2mass(neutral_formula):
-    '''
-    Convert neutral formula to mass but removing characters (e.g., X, R) typical in GEM but not ready for metabolomics application
-    '''
+def neutral_formula2mass(neutral_formula:str)->float:
+    """Convert neutral formula to mass but removing characters (e.g., X, R) typical in GEM but not ready for metabolomics application
+
+    Parameters
+    ----------
+    neutral_formula : str
+        Neutral Formula
+
+    Returns
+    -------
+    float
+        Mass of the neutral formula
+    Examples
+    --------
+    >>> from jms.utils.gems import *
+    >>> neutral_formula2mass('C17H32O2')
+    268.24023
+     
+    """
     formula_dict = parse_chemformula_dict(neutral_formula)
     if ("R" not in formula_dict) & ("X" not in formula_dict) & ("Z" not in formula_dict) & (len(formula_dict) != 0) :
         mono_mass = calculate_mass(formula_dict,6)
     else:
         mono_mass = float(0)
-    return(mono_mass)
+    return mono_mass
 
-def remove_compartment_by_substr(Cpd_id,len_of_suffix):
-    '''
+def remove_compartment_by_substr(Cpd_id:str,len_of_suffix:int)->str:
+    """    
     remove compartment based the length of suffix of the compound ID.
     This is working especially for humanGEM as they just use the last character for compartmentalization designation
     However, this is not working for EBI model as they do have "_bm" alone with "_c"
-    '''
+
+    Parameters
+    ----------
+    Cpd_id : str
+        Compound id from GEMs db
+    len_of_suffix : int
+        Length of suffix need to cut
+
+    Returns
+    -------
+    str
+        Compound id after remove
+
+    Examples
+    --------
+    >>> remove_compartment_by_substr('MAM00001c', 1)
+    'MAM00001'  
+
+    """
     Cpd_id_mod = Cpd_id.rstrip()[:len(Cpd_id)-len_of_suffix]
-    return(Cpd_id_mod)
+    return Cpd_id_mod
 
 def remove_compartment_by_split(Cpd_id,delimiter):
     '''
@@ -101,10 +134,20 @@ def remove_compartment_by_split(Cpd_id,delimiter):
     Cpd_id_mod = Cpd_id.rsplit(delimiter,1)[0]
     return(Cpd_id_mod)
 
-def remove_duplicate_cpd(list_of_Cpds):
-    '''
-    remove duplicated compounds after removing the compartment information.
-    '''
+def remove_duplicate_cpd(list_of_Cpds:list)->list:
+    """remove duplicated compounds after removing the compartment information.
+
+    Parameters
+    ----------
+    list_of_Cpds : list
+        Raw compound list
+
+    Returns
+    -------
+    list
+        Compound list after deduplication
+     
+    """
     id_list = []
     new_list_of_Cpds = []
     for Cpd in list_of_Cpds:
@@ -113,24 +156,46 @@ def remove_duplicate_cpd(list_of_Cpds):
             new_list_of_Cpds.append(Cpd)
         else:
             continue
-    return(new_list_of_Cpds)
+    return new_list_of_Cpds
 
-def remove_duplicate_rxn(list_of_Rxns):
-    '''
-    Removing uniport or exchange reactions.
-    '''
+def remove_duplicate_rxn(list_of_Rxns:list)->list:
+    """Removing uniport or exchange reactions.
+
+    Parameters
+    ----------
+    list_of_Rxns : list
+        Raw reaction list
+
+    Returns
+    -------
+    list
+        Reaction list after deduplication
+     
+    """
     new_list_of_Rxns = []
     for Rxn in list_of_Rxns:
         if Rxn.reactants == Rxn.products:
             continue
         else:
             new_list_of_Rxns.append(Rxn)
-    return(new_list_of_Rxns)
+    return new_list_of_Rxns
 
-def retain_valid_Rxns_in_Pathways(list_of_pathways, list_of_reactions):
-    '''
-    retain only valid Reactions in the pathway list after transport reactions excluded.
-    '''
+def retain_valid_Rxns_in_Pathways(list_of_pathways:list, list_of_reactions:list)->list:
+    """retain only valid Reactions in the pathway list after transport reactions excluded.
+
+    Parameters
+    ----------
+    list_of_pathways : list
+        list of pathways after port_pathway()
+    list_of_reactions : list
+        list of reactions after port_reaction()
+
+    Returns
+    -------
+    list
+        list of pathways after transport reactions excluded
+     
+    """
     valid_Rxns_list = [x.id for x in list_of_reactions]
     new_list_of_pathways = []
     for path in list_of_pathways:
@@ -140,18 +205,50 @@ def retain_valid_Rxns_in_Pathways(list_of_pathways, list_of_reactions):
                 new_list_of_reactions.append(rxn)
         path.list_of_reactions = new_list_of_reactions
         new_list_of_pathways.append(path)
-    return(new_list_of_pathways)
+    return new_list_of_pathways
 
-def export_pickle(export_file_path,MetabolicModel):
+def export_pickle(export_file_path:str,MetabolicModel):
+    """Export metDataModel.core.MetabolicModel to pickle
+
+    Parameters
+    ----------
+    export_file_path : str
+        pickle path
+    MetabolicModel : metDataModel.core.MetabolicModel
+        metabolic model to export
+     
+    """
     with open(export_file_path, 'wb') as f:
         pickle.dump(MetabolicModel.serialize(), f, pickle.HIGHEST_PROTOCOL)
 
-def export_json(export_file_path,MetabolicModel):
+def export_json(export_file_path:str,MetabolicModel):
+    """Export metDataModel.core.MetabolicModel to json
+
+    Parameters
+    ----------
+    export_file_path : str
+        json path
+    MetabolicModel : metDataModel.core.MetabolicModel
+        metabolic model to export
+     
+    """
     s = json.JSONEncoder().encode( MetabolicModel.serialize() )
     with open(export_file_path, 'w') as f:
         f.write(s)
 
-def export_table(export_file_path = '',MetabolicModel = '',list_of_entries = 'list_of_compounds'):
+def export_table(export_file_path:str,MetabolicModel,list_of_entries:str):
+    """Export compounds, reactions and pathways in metabolic model into .csv
+
+    Parameters
+    ----------
+    export_file_path : str
+        csv file path
+    MetabolicModel : metDataModel.core.MetabolicModel
+        the model store metabolites, reactions and pathways
+    list_of_entries : str
+        suffix of .csv file
+     
+    """
     pd.DataFrame(MetabolicModel.serialize()[list_of_entries]).to_csv(export_file_path, index = False)
 
 def fetch_MetabAtlas_GEM_identifiers(compound_list,
