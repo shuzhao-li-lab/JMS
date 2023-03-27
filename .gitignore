@@ -1,5 +1,6 @@
 # Mac
 .DS_Store
+.venv
 
 # docker
 docker/*
@@ -30,6 +31,9 @@ reference/*
 .ipynb_checkpoints
 
 
+.vscode
+notebooks/*
+model_output/*
 
 
 
