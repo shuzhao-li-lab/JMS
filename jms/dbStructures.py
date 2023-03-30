@@ -19,32 +19,50 @@ from .ions import compute_adducts_formulae, generate_ion_signature
 from .data.list_formula_mass import list_formula_mass
 
 
-def annotate_peaks_against_kcds(list_peaks, list_compounds, 
+def annotate_peaks_against_kcds(list_peaks, 
+                                list_compounds, 
                                 export_file_name_prefix='jms_annotated_',
-                                mode='pos',  mz_tolerance_ppm=5, check_isotope_ratio = True):
+                                mode='pos',  
+                                mz_tolerance_ppm=5, 
+                                rt_tolerance = 2,
+                                check_isotope_ratio = False):
     '''
     Wrapper function as example, to generate three annotation files for input list_peaks.
     list_compounds is known compound database, e.g.
     list_compounds = json.load(open('jms/data/compounds/list_compounds_HMDB4.json'))
-    
+    list_peaks is experimental data, list of features in json.
     '''
     KCD = knownCompoundDatabase()
     KCD.mass_index_list_compounds(list_compounds)
     KCD.build_emp_cpds_index()
-    KCD.export_mass_indexed_compounds(export_file_name_prefix+"KCD_mass_indexed_compounds.json")
-    EED = ExperimentalEcpdDatabase(mode=mode, mz_tolerance_ppm=mz_tolerance_ppm)
+    # optional to export_mass_indexed_compounds
+    # KCD.export_mass_indexed_compounds(export_file_name_prefix+"KCD_mass_indexed_compounds.json")
+
+    EED = ExperimentalEcpdDatabase(mode=mode, 
+                                   mz_tolerance_ppm=mz_tolerance_ppm,
+                                   rt_tolerance=rt_tolerance)
     EED.build_from_list_peaks(list_peaks)
+    # Second, singletons that get a formula match in KCD
+    EED.annotate_singletons(KCD)       
+    # Third, the remaining features unmatched to anything (orphans). Exported for potential downstream work.
+    # EED.dict_empCpds = self.append_orphans_to_epmCpds(EED.dict_empCpds)
+    
     EED.export_annotations(KCD, export_file_name_prefix)
 
 
 #----------------------------------------------------------------------------------------
 class knownCompoundDatabase:
     '''
-    Indexed data store for known compounds. 
-    One can search by mass or mass tree (patterns of isotopes/adducts, in the form of empCpd).
-    centurion_mass_tree is an indexed dictionary to group ions by 100th decimal.
+    Indexed data store for known compounds, e.g., from a database or a metabolic model. 
+    The search should be on empCpd not Cpd.
     An empCpd is an empirical compound, a set of features drived from the same mass (see README), 
-    which often include isomers.
+    which often include isomers. The regular mass search cannot distinguish isomers.
+
+    One can search by mass or mass tree (patterns of isotopes/adducts, in the form of empCpd.
+    We use build_centurion_tree to index empCpds;
+    centurion_mass_tree is an indexed dictionary to group ions by 100th decimal.
+    There are situations where only neutral mass is searched; others requiring ionized forms.
+    This class generates three trees to accommodate them: 'neutral', 'pos' and 'neg'.
     '''
     def __init__(self):
         '''
@@ -87,7 +105,8 @@ class knownCompoundDatabase:
         '''
         _db = {}
         for cpd in list_compounds:
-            k = cpd['neutral_formula']+ '_' + str(round(float(cpd['neutral_formula_mass']),6))  # ensuring unique formula and mass
+            k = cpd['neutral_formula']+ '_' + str(round(float(cpd['neutral_formula_mass']),6))  
+            # ensuring unique formula and mass
             if k in _db:  
                 _db[k].append( cpd )  
             else:  
@@ -189,9 +208,7 @@ class knownCompoundDatabase:
 
     def search_emp_cpd_single(self, emp_cpd, mode='pos', mz_tolerance_ppm=5):
         '''
-        If input emp_cpd is from khipu, neutral_formula_mass is usually alrady assigned. 
-        This is simple search on neutral_formula_mass.
-        Otherwise, emp_cpd format has to follow (loosely) specificiations in metDataModel, requiring anchor ion, e.g.
+        emp_cpd : empirical compound, following loosely specificiations in metDataModel, e.g.
         {interim_id': 12,
         'neutral_formula_mass': None,
         'neutral_formula': None,
@@ -201,20 +218,23 @@ class knownCompoundDatabase:
                                 'charged_formula': '',
                                 'ion_relation': 'anchor',
                                 'parent_epd_id': 12}, ], ...}
-        Note that neutral_formula is not assigned from experimental measurements, which only indicate m/z distances
-        between coeluting ions. 
-        The emp_cpds_trees (from mass_indexed_compounds) only considers primary ions here, and
-        should NOT include isotopes, which are considered in the experimental data.
+
+        If input emp_cpd is generated from khipu, neutral_formula_mass is usually alrady assigned, 
+        and this is simple search on neutral_formula_mass.
+        Otherwise, anchor ion is searched in emp_cpds_trees (from mass_indexed_compounds).
         The ion_relations are expected to be ['M[1+]', 'M+H[1+]', 'M+Na[1+]', 'M+H2O+H[1+]'] for pos,
         and ['M[-]', 'M-H[-]', 'M-H2O-H[-]', 'M+Cl[-]'] for neg.
+
+        This searches only neutral mass or anchor ion, because if anchor ion is not found in the database, 
+        other adducts are not possible.
 
         Return
         ======
         list of matched db empCpd as [(empCpd_id, ion_relation, score), ...], sorted by score.
-        While most search will return a single match, undeterministic situations exist,
+        While most search will return a single match. Occasionally, undeterministic situations appear,
         e.g. C6H13N and C6H14N could match to M+ and M+H+, respectively.
         The resolution of these will be left to downstream methods (bayesian etc).
-        The score is number of matched ions.
+        The score is number of matched ions, which may or may not be useful.
         '''
         results = []
         if emp_cpd['neutral_formula_mass']:
@@ -350,13 +370,16 @@ class ExperimentalEcpdDatabase:
     def index_empCpds(self):
         '''
         Build indices for self.list_peaks and self.empCpds.
+        Updates : self.indexed_peaks, self.formula_tree, self.indexed_empCpds
+
         Minor possibility that peak:empCpd is not N:1.
-        round 1 index of self.dict_empCpds; round 2 to be done after annotation
+        ?? round 1 index of self.dict_empCpds; round 2 to be done after annotation
         '''
         for P in self.list_peaks:
             self.dict_peaks[P['id_number']] = P
 
         self.indexed_peaks  = build_centurion_tree(self.list_peaks)
+        # use formula.get_formula_ions_tree
         self.formula_tree = get_formula_ions_tree(list_formula_mass, mode=self.mode)
 
         __PL = []
@@ -425,13 +448,8 @@ class ExperimentalEcpdDatabase:
     def annotate_empCpds_against_KCD(self, KCD, mz_tolerance_ppm=5):
         '''
         Get all empCpd matches between this experimental dataset and a known compound database.
-        KCD: knownCompoundDatabase instance.
-        >>> KCD.search_emp_cpd_single( EED.dict_empCpds[15] )
-        [('C6H14N_100.112624', 'M[1+]', 2), ('C6H13N_99.104799', 'M+H[1+]', 2)]
-        This search empCpds first, in which only anchor ion is searched. 
-        Because if anchor ion is not found in the database, other adducts are not possible.
-
-        return dictionary e.g.
+        KCD: knownCompoundDatabase instance. KCD.search_emp_cpd_single() searches only neutral mass or anchor ion. 
+        Returns dictionary e.g.
                 {(101, []),
                 (102,
                 [('C9H20NO2_174.149404', 'M[1+]', 2),
@@ -458,6 +476,10 @@ class ExperimentalEcpdDatabase:
     # Annotation functions
     def extend_empCpd_annotation(self, KCD):
         '''
+        This searches KCD for the list of empCpds.
+        With khipu, most empCpds have neutral mass, which is used for KCD search.
+        If no neutral mass, an anchor ion is used for KCD search (KCD.search_emp_cpd_single).
+
         Before khipu:
         self.empCpds_formula_search(KCD)
         self.__extend_empCpds__()
@@ -494,7 +516,7 @@ class ExperimentalEcpdDatabase:
         Extend empCpds by 
         additional isotopes/adducts, based on mass2chem.formula.compute_adducts_formulae
 
-        Hold off from khipu results.
+        Hold off; no need now from khipu results.
         '''
         peakList = [P for P in self.list_peaks if P['id_number'] not in self.peak_to_empCpd]
         peakTree = build_centurion_tree(peakList)
@@ -507,7 +529,7 @@ class ExperimentalEcpdDatabase:
                 for ion in expected_ions:
                     matches = find_all_matches_centurion_indexed_list(ion[0], peakTree, self.mz_tolerance_ppm)
                     for peak in matches:
-                        if is_coeluted(anchor, peak, rt_tolerance=10):
+                        if is_coeluted(anchor, peak, rt_tolerance=self.rt_tolerance):
                             peak['ion_relation'] = ion[1]
                             E['MS1_pseudo_Spectra'].append(peak)
                             self.peak_to_empCpd_ion_relation[peak['id_number']] = peak['ion_relation']
@@ -564,7 +586,7 @@ class ExperimentalEcpdDatabase:
             tmp = [P1, ]
             for jj in range(1, len(PP)):
                 _P = self.dict_peaks[PP[jj][0]]
-                if is_coeluted(tmp[-1], _P, rt_tolerance=10):
+                if is_coeluted(tmp[-1], _P, rt_tolerance=self.rt_tolerance):
                     tmp.append(_P)
                 else:
                     # not coeluted, new empCpd
@@ -597,7 +619,7 @@ class ExperimentalEcpdDatabase:
                                         self.mode, primary_only=False):
             matches = find_all_matches_centurion_indexed_list(ion[0], peakTree, mz_tolerance_ppm)
             for peak in matches:
-                if is_coeluted(anchor, peak, rt_tolerance=10):
+                if is_coeluted(anchor, peak, rt_tolerance=self.rt_tolerance):
                     peak['ion_relation'] = ion[1]
                     new.append(peak)
         return epd_peaks + new
@@ -605,6 +627,8 @@ class ExperimentalEcpdDatabase:
 
     def annotate_all_against_KCD(self, KCD, mz_tolerance_ppm=5):
         '''
+        Not used now.
+
         Get matches of both empCpds and singleton peaks only in KCD.
         This function should not be used if one uses empCpds_formula_search and annotate_by_formula_grid.
         Results contain annotation via empCpd, via singleton, or empCpd features as if singleton.
@@ -654,36 +678,35 @@ class ExperimentalEcpdDatabase:
             json.dump(list(self.dict_empCpds.values()), O, ensure_ascii=False, indent=2)
 
 
-    def export_annotations(self, KCD, export_file_name_prefix, include_succinct=False):
+    def export_annotations(self, KCD, export_file_name_prefix):
         '''
-        Export expt empCpds, match relationships, and a tsv table for input list_peaks, with all matched db empCpds.
-
-        To-do:
-        Will add option to include a version succinct annotation of anchor ions and recommended matches only.
+        Export expt empCpds and a tsv table for input list_peaks, with all matched db empCpds.
         '''
-        peak_result_dict, epd_search_result_dict = self.annotate_all_against_KCD(KCD)
-
         self.export_empCpds(export_file_name_prefix+"EED_empCpds.json")
-        with open(export_file_name_prefix+"mapping.json", 'w', encoding='utf-8') as O:
-            json.dump(epd_search_result_dict, O, ensure_ascii=False, indent=2)
-
-        s = "[peak]id_number\tmz\tapex\t[EmpCpd]interim_id\t[EmpCpd]ion_relation\tmatched_DB_shorts\tmatched_DB_records\n"
-        for ii, V in peak_result_dict.items():
-            matched_DB_shorts, matched_DB_records = '', ''
-            list_matches = V['list_matches']
-            if list_matches:
+        s = "[peak]id_number\tmz\trtime\tapex(scan number)\t[EmpCpd]interim_id\t[EmpCpd]ion_relation\tneutral_formula\tneutral_formula_mass\
+        \tname_1st_guess\tmatched_DB_shorts\tmatched_DB_records\n"
+        
+        for _, V in self.dict_empCpds.items():
+            name_1st_guess, matched_DB_shorts, matched_DB_records = '', '', ''
+            if 'list_matches' in V:
+                list_matches = V['list_matches']
+                if list_matches:
+                    name_1st_guess = KCD.mass_indexed_compounds[list_matches[0][0]]['compounds'][0]['name']
                     matched_DB_shorts = ", ".join([ "(" + KCD.short_report_emp_cpd(xx[0]) + ")"  for xx in list_matches])
                     matched_DB_records = ", ".join([str(xx) for xx  in list_matches])
 
-            s += '\t'.join([str(x) for x in [
-                ii, V['peak']['mz'], V['peak']['apex'], V['interim_id'], V['epd_ion_relation'],
-                matched_DB_shorts, matched_DB_records]]) + "\n"
+            for peak in V['MS1_pseudo_Spectra']:
+                s += '\t'.join([str(x) for x in [
+                    peak['id_number'], peak['mz'], peak['rtime'], peak['apex'], V['interim_id'], peak.get('ion_relation', ''),
+                    V['neutral_formula'], V['neutral_formula_mass'],
+                    name_1st_guess, matched_DB_shorts, matched_DB_records]]) + "\n"
 
         outfile = export_file_name_prefix + '.tsv'
-        with open(outfile, 'w') as O:
+        with open(outfile, encoding='utf-8', mode='w') as O:
             O.write(s)
 
         print("\nAnnotation of %d Empirical compounds was written to %s." %(len(self.dict_empCpds), outfile))
+
 
 
     #-----------------------------------------
