@@ -1,6 +1,11 @@
 '''
 Construction of empirical compounds via khipu 
 
+
+Will add mummichog functions on userData and empCpds here -
+
+
+
 '''
 
 import json
