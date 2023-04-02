@@ -2,6 +2,10 @@
 Test coverage of a dataset or a model on pathways/ontologies.
 
 Could exclude currency metabolites in future.
+
+To refactor -
+
+
 '''
 
 from .modelConvert import convert_json_model
