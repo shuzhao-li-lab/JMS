@@ -7,9 +7,9 @@ Started in mummichog 2.6, but moving to this repo and will continue with mummich
 
 def convert_json_model(jmodel):
     '''
-    The jmodel was parsed from one of the Genome scale metabolic models. 
+    Convert a JSON style, concise genome scale metabolic models to mummichog style with internal indexing.
     All compound identifiers and other identifiers are expected to be contained within the model.
-    Returns model dictionary with indexing, as in mummichog style.
+    Returns model as a dictionary with as in mummichog style.
 
     >>> jmodel.keys()
         dict_keys(['id', 'list_of_reactions', 'list_of_compounds', 'list_of_pathways', 'meta_data'])
@@ -101,26 +101,15 @@ def convert_json_model(jmodel):
 
 
 
-
-
 class metabolicNetwork:
     '''
-    Metabolite-centric metabolic model 
-    Theoretical model, not containing user data
+    Simple wrapper class of a genome scale metabolic model in JSON.
 
-    This is from # from metDataModel.mummichog import metabolicNetwork
-
-
+    ?? keep or not ??
     '''
     def __init__(self, MetabolicModel):
         '''
-        Initiation of metabolic network model.
-        Building Compound index.
-        Parsing input files.
-        Matching m/z - Compound.
-        
-        MetabolicModel['Compounds'] are subset of cpds in network/pathways with mw.
-        Not all in total_cpd_list has mw.
+        MetabolicModel : metabolic model in JSON style dictionary.
         '''
         #print_and_loginfo( "Loading metabolic network %s..." %MetabolicModel.version ) # version from metabolic model
         
@@ -144,9 +133,6 @@ class metabolicNetwork:
         pass
 
 
-#
-# this should be based on Experiment class, and organize by peaks - features - empCpds
-#
 
 class InputUserData:
     '''
@@ -308,7 +294,14 @@ class InputUserData:
 
 
 
-# metabolicNetwork
+
+
+
+
+
+
+
+
 
 class DataMeetModel:
     '''
