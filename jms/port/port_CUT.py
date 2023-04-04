@@ -46,7 +46,7 @@ def port_CUT(species: str):
                 ##################################  
     """)
 
-    # download the most updated Human-GEM.xml
+    # download the most updated XXX-GEM.xml
     download_path = os.path.join(cur_info['output_dir'], cur_info['name_xml'])
 
     logging.info(cur_info['github_xml_path'] + '?raw=true')
@@ -97,7 +97,7 @@ def port_CUT(species: str):
     ##################################
     # metabolicModel to export
     MM = MetabolicModel()
-    MM.id = f'az_HumanGEM_{today}'
+    MM.id = f'{species}_GEM_{today}'
     MM.meta_data = cur_info['metadata']
     MM.list_of_pathways = [P.serialize() for P in myPathways]
     MM.list_of_reactions = [R.serialize() for R in myRxns]

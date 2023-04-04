@@ -118,8 +118,6 @@ def port_AGORA():
         # read xml by cobra
         model = cobra.io.read_sbml_model(file_path)
 
-        print(model.__dict__)
-
         ##################################
         #####     port metabolites   #####
         ##################################

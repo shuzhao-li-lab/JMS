@@ -383,9 +383,8 @@ def export_json(export_file_path:str,MetabolicModel):
         metabolic model to export
      
     """
-    s = json.JSONEncoder().encode( MetabolicModel.serialize() )
     with open(export_file_path, 'w') as f:
-        f.write(s)
+        json.dump(MetabolicModel.serialize(), f, indent=4)
 
 def export_table(export_file_path:str,MetabolicModel,list_of_entries:str):
     """Export compounds, reactions and pathways in metabolic model into .csv

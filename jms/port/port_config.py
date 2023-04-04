@@ -109,7 +109,7 @@ basic_info_dict = {
         },
         'fruitfly': {
             # The path you intended to save
-            'output_dir': './model_output/ZebrafishGEM/',
+            'output_dir': './model_output/FruitflyGEM/',
             'name_xml': 'Fruitfly-GEM.xml',
             'github_xml_path': 'https://github.com/SysBioChalmers/Fruitfly-GEM/blob/main/model/Fruitfly-GEM.xml',
             'note': 'Fruitfly-GEM compartmentalized, with genes and ECs.',

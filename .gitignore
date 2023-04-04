@@ -2,6 +2,9 @@
 .DS_Store
 .venv
 
+# vscode
+.vscode
+
 # docker
 docker/*
 
@@ -31,8 +34,9 @@ reference/*
 .ipynb_checkpoints
 
 
-.vscode
 notebooks/*
+
+# output data 
 model_output/*
 
 
