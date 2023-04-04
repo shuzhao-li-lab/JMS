@@ -19,6 +19,7 @@
 #   - transport reactions can be removed - they are identified by reactants and products being the same.
 #   - redundant reactions can be merge - same reactions in diff compartments become one.
 # Georgi Kolishovski, Minghao Gong, 2022-04-21
+# Yuanye Chi 2023-03-21
 
 # !pip install cobra --user --ignore-installed ruamel.yaml
 # !pip install --upgrade metDataModel # https://github.com/shuzhao-li/metDataModel/ 
@@ -30,19 +31,28 @@ import pandas as pd
 import sys
 import os
 
-
-sys.path.append("/Users/gongm/Documents/projects/mass2chem/")
-sys.path.append("/Users/gongm/Documents/projects/JMS/JMS/JMS")
 from mass2chem.formula import *
 from jms.formula import *
-from jms.utils.gems import *
-from jms.utils.git_download import git_download_from_direcotry
+from jms.port.port_utils import *
+from jms.port.git_download import git_download_from_direcotry
 
 from datetime import datetime
 today =  str(datetime.today()).split(" ")[0]
 
-def port_metabolite(M):
-    '''convert cobra Metabolite to metDataModel Compound'''
+def port_metabolite(M:cobra.core.metabolite.Metabolite):
+    """convert cobra Metabolite to metDataModel Compound
+    
+    Parameters
+    ----------
+    M : cobra.core.metabolite.Metabolite
+        HumanGEM model read by Cobra
+
+    Returns
+    -------
+    metDataModel.core.Compound
+        Compound form in metDataModel
+     
+    """
     Cpd = Compound()
     Cpd.src_id = remove_compartment_by_split(M.id,'[') # remove the [c] from eg h2o[c]
     Cpd.id = remove_compartment_by_split(M.id,'[') # remove the [c] from eg h2o[c]
@@ -77,16 +87,16 @@ def port_pathway(P):
 
 if __name__ == '__main__':
     # The path you intended to save
-    input_dir = '/Users/gongm/Documents/projects/JMS/JMS/JMS/test/input/test_automatic_AGORA' # 
-    output_fdr = '/Users/gongm/Documents/projects/JMS/JMS/JMS/test/input/test_automatic_AGORA' #
+    input_dir = './testdata/AGORA/' # 
+    output_fdr = './testdata/AGORA/' #
     version_manual = 'AGORA_1_03_With_Mucins_sbml' #
 
-    download_from_git = False
-    if download_from_git == True:
+    download_from_git = True
+    if download_from_git:
         path_in_github = 'CurrentVersion/AGORA_1_03/AGORA_1_03_With_Mucins_sbml' #
 
     # download the AGORA xml files from github
-    if download_from_git == True:
+    if download_from_git:
         user = 'VirtualMetabolicHuman'
         repo_name = 'AGORA'
         git_download_from_direcotry(user,repo_name,path_in_github,input_dir)
@@ -124,8 +134,7 @@ if __name__ == '__main__':
 
         print(f'After decompartmentalization, there are {len(myCpds)} compounds left')
 
-
-        myCpds = fetch_AGORA_GEM_identifiers(myCpds,json_path = '../data/staged/vmh.json',overwrite = True)
+        myCpds = fetch_AGORA_GEM_identifiers(myCpds,json_path = './jms/data/staged/vmh.json',overwrite = True)
 
         ## Reactions to port
         myRxns = []

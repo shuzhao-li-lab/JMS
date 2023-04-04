@@ -1,5 +1,9 @@
 # Mac
 .DS_Store
+.venv
+
+# vscode
+.vscode
 
 # docker
 docker/*
@@ -29,7 +33,8 @@ reference/*
 # it will work only for untracked files ; :/
 .ipynb_checkpoints
 
-
+# output data 
+model_output/*
 
 
 

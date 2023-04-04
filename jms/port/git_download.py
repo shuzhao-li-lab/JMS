@@ -20,6 +20,7 @@ def git_download_from_direcotry(user,repo_name,path_of_dir,local_output_dir):
     '''
 
     dir_url = os.path.join(f"https://api.github.com/repos/{user}/{repo_name}/contents/",path_of_dir)   
+    print(dir_url)
     list_of_attrs =json.loads(requests.get(dir_url).text)
     list_of_dicts = []
     for attrs in list_of_attrs:

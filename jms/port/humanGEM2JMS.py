@@ -41,7 +41,7 @@ from datetime import datetime
 # sys.path.append("/Users/gongm/Documents/projects/JMS/JMS/JMS")
 from mass2chem.formula import *
 from jms.formula import *
-from jms.utils.gems import *
+from jms.port.port_utils import *
 
 # The path you intended to save
 output_fdr = './testdata/HumanGEM/'
@@ -76,7 +76,6 @@ xmlFile = HG_xml_path
 model = cobra.io.read_sbml_model(xmlFile)
 
 # Port metabolite
-
 def port_metabolite(M:cobra.core.metabolite.Metabolite):
     """convert cobra Metabolite to metDataModel Compound
     
@@ -173,7 +172,6 @@ print(f'After removing transport reactions, there are {len(myRxns)} reactions')
 
 # ## Port pathway
 # pathways, using group as pathway. Other models may use subsystem etc.
-
 def port_pathway(P:cobra.core.group.Group):
     """pathways, using group as pathway. Other models may use subsystem etc.
 

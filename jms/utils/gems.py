@@ -1,47 +1,13 @@
-"""
-Utilities functions when porting genome scale model into metDataModel.
-"""
 import sys
 import pickle
 import json
 import pandas as pd
 import re
 
-from datetime import datetime
-today =  str(datetime.today()).split(" ")[0]
-
 from jms.utils.git_download import * 
 from jms.formula import *
 
 from mass2chem.formula import *
-
-from enum import Enum
-
-class GSM(Enum):
-    HUMAN_GEM = 1
-    AGORA = 2
-    CARVEME = 3
-
-
-basic_info_dict = {
-    GSM.HUMAN_GEM: {
-    # The path you intended to save
-    'output_dir':'./model_output/HumanGEM/',
-    'name_xml':'Human-GEM.xml',
-    'github_xml_path':'https://github.com/SysBioChalmers/Human-GEM/blob/main/model/Human-GEM.xml',
-    'note':'Human-GEM compartmentalized, with genes and ECs.',
-    'pathway_source':'Human-GEM v1.14.0',
-    'metadata':{
-        'species': 'human',
-        'version': '',
-        'sources': [f'https://github.com/SysBioChalmers/Human-GEM, retrieved {today}'], #
-        'status': '',
-        'last_update': today,  #
-        'note': 'Human-GEM compartmentalized, with genes and ECs.',
-    }},
-    GSM.AGORA:2,
-    GSM.CARVEME:3
-}
 
 def list_all_identifiers(cobra_model,notes):
     '''
@@ -160,30 +126,13 @@ def remove_compartment_by_substr(Cpd_id:str,len_of_suffix:int)->str:
     Cpd_id_mod = Cpd_id.rstrip()[:len(Cpd_id)-len_of_suffix]
     return Cpd_id_mod
 
-def remove_compartment_by_split(Cpd_id:str,delimiter:str)->str:
-    """
+def remove_compartment_by_split(Cpd_id,delimiter):
+    '''
     remove compartment based the delimiters of the compound ID.
     This works for most other models.
-
-    Parameters
-    ----------
-    Cpd_id : str
-        compound's previous id
-    delimiter : str
-        the compartment after the delimiter will be discarded
-
-    Returns
-    -------
-    str
-        the compound id after compartment removed
-
-    Examples
-    --------
-    >>> remove_compartment_by_split('12mtmrs2eACP[c]','[')
-    '12mtmrs2eACP'
-    """
+    '''
     Cpd_id_mod = Cpd_id.rsplit(delimiter,1)[0]
-    return Cpd_id_mod
+    return(Cpd_id_mod)
 
 def remove_duplicate_cpd(list_of_Cpds:list)->list:
     """remove duplicated compounds after removing the compartment information.
@@ -336,26 +285,9 @@ def fetch_MetabAtlas_GEM_identifiers(compound_list,
                                 new_db_ids.append((sub_key,vv))
                     Cpd.db_ids = new_db_ids
 
-def fetch_AGORA_GEM_identifiers(compound_list:list,
-                                json_path:str,
-                                overwrite = True)->list:
-    """get database ids for AGORA compounds based on AGORA id
-
-    Parameters
-    ----------
-    compound_list : list
-        metDataModel compounds list
-    json_path : str
-        file path of the json file
-    overwrite : bool, optional
-        if db ids need to be overwrite, by default True
-
-    Returns
-    -------
-    list
-        list of metDataModel compounds with db ids
-     
-    """
+def fetch_AGORA_GEM_identifiers(compound_list,
+                                json_path,
+                                overwrite = True):
     with open(json_path,'r') as f:
         list_vmh_cpd = json.load(f)
     vmh_dict = {}
