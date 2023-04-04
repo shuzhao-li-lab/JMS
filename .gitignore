@@ -33,9 +33,6 @@ reference/*
 # it will work only for untracked files ; :/
 .ipynb_checkpoints
 
-
-notebooks/*
-
 # output data 
 model_output/*
 
