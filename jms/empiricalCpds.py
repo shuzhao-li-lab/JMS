@@ -1,27 +1,52 @@
 '''
-Construction of empirical compounds via khipu 
-
-
-Will add mummichog functions on userData and empCpds here -
-
-
-
+Convenience functions to construct empirical compounds via khipu;
+and retrieve, filter and search empCpds.
 '''
 
 import json
 import numpy as np
 from .search import find_all_matches_centurion_indexed_list
+from khipu.epdsConstructor import epdsConstructor
+from khipu.utils import adduct_search_patterns, \
+                            adduct_search_patterns_neg, \
+                                isotope_search_patterns, \
+                                    extended_adducts
 
 
+def get_khipu_epds_from_list_peaks(
+                    list_peaks, 
+                    mode, 
+                    isotope_search_patterns,
+                    adduct_patterns,
+                    extended_adducts,
+                    mz_tolerance_ppm,
+                    rt_tolerance):
+    '''
+    Wrapper function to build empirical compounds from a list of JSON features/peaks.
 
+    Parameters
+    ----------
+    list_peaks : list of features, [{'mz': 133.097023, 'rtime': 654, 'height': 14388.0, 'id': 555}, ...]
+    mode : ionization mode, 'pos' or 'neg'.
+    isotope_search_patterns : E.g. [ (1.003355, '13C/12C', (0, 0.8)), (2.00671, '13C/12C*2', (0, 0.8)),]
+    adduct_patterns : e.g. [ (21.9820, 'Na/H'), (41.026549, 'Acetonitrile')]
+    extended_adducts : adducts used for 2nd round search, e.g. [(117.02655, '-NH3'),
+                            (17.02655, 'NH3'), (-18.0106, '-H2O'), ...]
+    mz_tolerance_ppm : ppm tolerance in examining m/z patterns.
+    rt_tolerance : tolerance of retention time, arbitrary unit but consistent with list_peaks.
 
-
-
-
-
-
-
-
+    Returns
+    -------
+    dict_empCpds : {interim_id: empCpd, ...}
+    '''
+    ECCON = epdsConstructor(list_peaks, mode=mode)
+    return ECCON.peaks_to_epdDict(
+                    isotope_search_patterns,
+                    adduct_patterns,
+                    extended_adducts,
+                    mz_tolerance_ppm,
+                    rt_tolerance,
+    ) 
 
 def load_epds_from_json(file):
     '''Read JSON annotation dictionary from asari/khipu.
@@ -29,6 +54,7 @@ def load_epds_from_json(file):
     '''
     epds = json.load(open(file))
     return list(epds.values())
+
 
 def filter_epds(list_epds, neutral_formula_mass=True, multiple_ions=True):
     '''Filter list of empCpds by neutral_formula_mass or by multiple_ions.
@@ -79,6 +105,4 @@ def get_match(cpds, mztree, ppm=5):
             if _m:
                 match.append( (x, _m) )
     return match
-
-
 
