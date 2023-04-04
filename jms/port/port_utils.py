@@ -1,5 +1,5 @@
 """
-Utilities functions when porting genome scale model into metDataModel.
+Utilities functions when porting genome scale model into metDataModel.(Previously is gem.py)
 """
 import enum
 import sys

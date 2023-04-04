@@ -3,9 +3,7 @@ Function used to port CUT models into metDataModel.
 
 Yuanye Chi 2023-03-23
 """
-import sys
 import os
-from datetime import datetime
 
 import cobra  # https://cobrapy.readthedocs.io/en/latest/io.html#SBML
 
