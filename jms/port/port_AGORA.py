@@ -116,8 +116,12 @@ def port_AGORA():
             continue
         
         # read xml by cobra
-        model = cobra.io.read_sbml_model(file_path)
-
+        try:
+            model = cobra.io.read_sbml_model(file_path)
+        except Exception as e:
+            print(e)
+            continue
+            
         ##################################
         #####     port metabolites   #####
         ##################################
