@@ -2,6 +2,7 @@
 Class structures to connect metabolite/compound databases to empirical compounds;
 and to connect experimental data to empirical compounds.
 '''
+
 import json
 from operator import itemgetter
 import numpy as np
@@ -564,6 +565,10 @@ class ExperimentalEcpdDatabase:
         Search singletons for formulae first by KCD search then .data.formula_tree.
         Add new empCpds to self.dict_empCpds as new empCpds, and extend adduct search.
         Assign new identifiers as (10000 +number of dict_empCpds + numerical count).
+
+        Updates
+        -------
+        self.dict_empCpds : {id: empCpd, ...}
         '''
         formula_to_peaks = {}
         found = self.singleton_formula_search(KCD)

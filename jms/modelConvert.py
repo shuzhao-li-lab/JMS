@@ -3,12 +3,8 @@ Conversion of genome scale metabolic models to JSON formats,and to indexed Pytho
 Matching btw metabolic models and experimental empirical compounds.
 Used in mummichog 3.
 '''
-from khipu.epdsConstructor import epdsConstructor
-from khipu.utils import adduct_search_patterns, \
-                            adduct_search_patterns_neg, \
-                                isotope_search_patterns, \
-                                    extended_adducts
 
+from khipu.epdsConstructor import epdsConstructor
 from .dbStructures import knownCompoundDatabase, ExperimentalEcpdDatabase
 
 
@@ -157,7 +153,9 @@ class DataMeetModel:
     '''
     def __init__(self, parameters, MetabolicModel, userFeatureList):
         '''
-        
+        parameters : dictionary to pass ion mode, m/z and rt tolerance and isotope/adduct patterns.
+        MetabolicModel : metabolic model in JSON style dictionary.
+        userFeatureList : list of JSON style features
         '''
         self.model = MetabolicModel
         self.userFeatureList = userFeatureList
@@ -171,6 +169,9 @@ class DataMeetModel:
 
     def _get_ListOfEmpiricalCompounds_(self):
         '''
+        Returns
+        -------
+        dict_empCpds : {id: empCpd, ...}
         '''
         ECCON = epdsConstructor(self.userFeatureList, mode=self.mode)
         return ECCON.peaks_to_epdDict(
@@ -183,31 +184,21 @@ class DataMeetModel:
 
     def match_all(self):
         '''
+        Match model compounds with empirical compounds, via the JMS KCD-EED architecture.
         The search here cannot distinguish isomers, thus centering on neutral mass/formula.
 
-
-        self.
-
+        Returns
+        -------
+        dict_empCpds : {id: empCpd, ...} with matched compounds in empCpd['list_matches']
         '''
         KCD = knownCompoundDatabase()
         KCD.mass_index_list_compounds(self.model['Compounds'])
         KCD.build_emp_cpds_index()
-
         EED = ExperimentalEcpdDatabase(mode=self.mode, 
                                        mz_tolerance_ppm=self.mz_tolerance_ppm, 
                                        rt_tolerance=self.rt_tolerance)
         EED.dict_empCpds = self._get_ListOfEmpiricalCompounds_()
-        # It takes three steps to take care of all features. First khipu organized empCpds
-        EED.extend_empCpd_annotation(self.KCD)
-        # Second, singletons that get a formula match in KCD
-        EED.annotate_singletons(self.KCD)       
-        # Third, the remaining features unmatched to anything (orphans). Exported for potential downstream work.
-        EED.dict_empCpds = self.append_orphans_to_epmCpds(EED.dict_empCpds)
+        EED.extend_empCpd_annotation(KCD)
+        EED.annotate_singletons(KCD)       
         return EED.dict_empCpds
-
-
-    def append_orphans_to_epmCpds(d):
-        pass
-
-
 
