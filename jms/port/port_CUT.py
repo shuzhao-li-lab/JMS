@@ -17,7 +17,7 @@ from jms.formula import *
 from jms.port.port_utils import *
 from jms.port.port_config import *
 
-from metDataModel.core import Compound, Reaction, Pathway, MetabolicModel
+from metDataModel.core import MetabolicModel
 
 # Logger Configuration
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")

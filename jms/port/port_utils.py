@@ -140,7 +140,7 @@ def remove_compartment_by_substr(Cpd_id:str,len_of_suffix:int)->str:
     Cpd_id_mod = Cpd_id.rstrip()[:len(Cpd_id)-len_of_suffix]
     return Cpd_id_mod
 
-def port_metabolite(M:cobra.core.metabolite.Metabolite, model:enum):
+def port_metabolite(M:cobra.core.metabolite.Metabolite, model:enum, model_name:str):
     """convert cobra Metabolite to metDataModel Compound
 
     Parameters
@@ -149,6 +149,8 @@ def port_metabolite(M:cobra.core.metabolite.Metabolite, model:enum):
         metabolites read by Cobra
     model : enum
         the model enum defined in GSM()
+    model_name : str
+        as the key in db_ids
 
     Returns
     -------
@@ -162,6 +164,7 @@ def port_metabolite(M:cobra.core.metabolite.Metabolite, model:enum):
         Cpd.src_id = remove_compartment_by_substr(M.id,1)
         Cpd.id = remove_compartment_by_substr(M.id,1)              # temporarily the same with the source id
         Cpd.db_ids = [['humanGEM',Cpd.src_id]] # using src_id to also reference humanGEM ID in db_ids field
+        Cpd.name = M.name
         for k,v in M.annotation.items():
             if k != 'sbo':
                 if isinstance(v,list):
@@ -181,13 +184,35 @@ def port_metabolite(M:cobra.core.metabolite.Metabolite, model:enum):
     if model == Sources.AGORA:
         Cpd.src_id = remove_compartment_by_split(M.id,'[') # remove the [c] from eg h2o[c]
         Cpd.id = remove_compartment_by_split(M.id,'[') # remove the [c] from eg h2o[c]
+        Cpd.name = M.name
         Cpd.db_ids = list(M.notes.items())
         mydict = M.notes   # other databaseIDs  are in the notes tag
         Cpd.SMILES= mydict.get("SMILES",None) # not know if this is useful or not
         Cpd.inchi= mydict.get("InChIString",None)
 
-
-    Cpd.name = M.name
+    if model == Sources.GAPSEQ:
+        Cpd.src_id = remove_compartment_by_split(M.id,'_')
+        Cpd.id = remove_compartment_by_split(M.id,'_')  
+        Cpd.name = M.name.rsplit('-',1)[0]
+        annotation_as_dict = True
+        if annotation_as_dict == True:
+            Cpd.db_ids = {}
+            Cpd.db_ids[model_name] = Cpd.src_id
+        else:
+            Cpd.db_ids = [[model_name,Cpd.src_id]] 
+        for k,v in M.annotation.items():
+            if k not in ['sbo','hmdb','kegg.compound']:
+                if annotation_as_dict == True:
+                    Cpd.db_ids[k] = v
+                else:
+                    if isinstance(v,list):
+                        Cpd.db_ids.append([[k,x] for x in v])
+                    else: 
+                        if ":" in v:
+                            Cpd.db_ids.append([k,v.split(":")[1]])
+                        else:
+                            Cpd.db_ids.append([k,v])
+    
     Cpd.charge = M.charge
     Cpd.neutral_formula = None if M.formula is None else adjust_charge_in_formula(M.formula,M.charge)  # some of the compounds have no formula.
     Cpd.neutral_mono_mass = None if Cpd.neutral_formula is None else neutral_formula2mass(Cpd.neutral_formula)
@@ -214,8 +239,8 @@ def port_reaction(R:cobra.core.reaction.Reaction, model:enum):
      
     """
     new = Reaction()
-    new.id = R.id
     if model == Sources.CUT:
+        new.id = R.id
         new.reactants = [remove_compartment_by_substr(m.id,1) for m in R.reactants] # decompartmentalization
         new.products = [remove_compartment_by_substr(m.id,1) for m in R.products]   # decompartmentalization
         ecs = R.annotation.get('ec-code', [])
@@ -225,8 +250,17 @@ def port_reaction(R:cobra.core.reaction.Reaction, model:enum):
         else:
             new.enzymes = [ecs]       # this version of human-GEM may have it as string
     elif model == Sources.AGORA:
+        new.id = R.id
         new.reactants = [remove_compartment_by_split(m.id,'[') for m in R.reactants] 
         new.products = [remove_compartment_by_split(m.id,'[') for m in R.products] 
+    elif model == Sources.GAPSEQ:
+        new.id = remove_compartment_by_split(R.id,'_')
+        new.reactants = [remove_compartment_by_split(x.id,'_') for x in R.reactants]
+        new.products = [remove_compartment_by_split(x.id,'_') for x in R.products]
+        new.genes = [g.id for g in R.genes]
+        new.enzymes = R.annotation.get('ec-code', [])
+        if 'EX_' not in new.id:
+            return new
 
     return new
 
@@ -251,11 +285,15 @@ def port_pathway(P:cobra.core.group.Group, model:enum, species:str):
     new = Pathway()
     new.id = P.id
     new.name = P.name
-    new.list_of_reactions = [x.id for x in P.members]
     if model == Sources.CUT:
         new.source = [basic_info_dict[model][species]['pathway_source'],]
+        new.list_of_reactions = [x.id for x in P.members]
     elif model == Sources.AGORA:
+        new.list_of_reactions = [x.id for x in P.members]
         new.source = ['AGORA',]
+    elif model == Sources.GAPSEQ:
+        new.list_of_reactions = [remove_compartment_by_split(x.id,'_') for x in P.members]
+        new.source = ['gapseq',]
 
 
     return new

@@ -7,6 +7,7 @@ today = str(datetime.today()).split(" ")[0]
 class Sources(Enum):
     CUT = 1
     AGORA = 2
+    GAPSEQ = 3
 
 
 basic_info_dict = {
@@ -136,5 +137,17 @@ basic_info_dict = {
                     'last_update': today,  #
                     'note': f'AGORA cloned from https://github.com/VirtualMetabolicHuman, retrieved from {today}\ .'
                 }
+    },
+    Sources.GAPSEQ:{
+        'local_output_dir': "./testdata/GAPSEQ",
+        'meta_data' : {
+            'species': '',
+            'version': '',
+            'sources': [f'gapseq, retrieved {today}'], #
+            'status': '',
+            'last_update': today,  #
+            'note': """gapseq decompartmentalized, with genes and ECs.""",
+        }
+    
     }
 }
