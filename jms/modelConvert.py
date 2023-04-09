@@ -206,17 +206,81 @@ class DataMeetModel:
         -------
         dict_empCpds : {id: empCpd, ...} with matched compounds in empCpd['list_matches'],
             which have KCD empCpd identifiers but compound records need to pull out KCD later.
+            This dict includes singletons and empCpds without matches.
+
+        Examples
+        --------
+        A intermediary EED.dict_empCpds before updating identity: 
+        {'interim_id': 'kp203_202.1317', 
+            'neutral_formula_mass': 202.13169603323, 'neutral_formula': None, 
+            'Database_referred': [], 'identity': [], 
+            'MS1_pseudo_Spectra': [{'id_number': 'F3900', 'mz': 204.1424, 'rtime': 23.04, 'rtime_left_base': '21.88', 
+                    'rtime_right_base': '25.37', 'parent_masstrack_id': '2519', 'peak_area': '111965925', 'cSelectivity': '0.86', 
+                    'goodness_fitting': '0.98', 'snr': '6675', 'detection_counts': '15', ' 'apex': 23.04, 
+                    'representative_intensity': '111965925', 'id': 'F3900', 
+                    'isotope': '13C/12C', 'modification': 'M+H+', 'ion_relation': '13C/12C,M+H+', 'parent_epd_id': 'kp203_202.1317'}, 
+            {'id_number': 'F3684', 'mz': 203.1389, 'rtime': 23.04, 'rtime_left_base': '21.88', 'rtime_right_base': '25.37', 
+                    'parent_masstrack_id': '2495', 'peak_area': '402792917', 'cSelectivity': '0.86', 'goodness_fitting': '0.98', 
+                    'snr': '120', 'detection_counts': '15',  'apex': 23.04, 'representative_intensity': '402792917', 
+                    'id': 'F3684', 'isotope': 'M0', 'modification': 'M+H+', 'ion_relation': 'M0,M+H+', 'parent_epd_id': 'kp203_202.1317'}], 
+            'MS2_Spectra': [], 
+            'list_matches': [('C9H18N2O3_202.131742', 'neutral', 1)]}
+
+        An indexed KCD empCpd, KCD.mass_indexed_compounds['C9H18N2O3_202.131742']:
+        {'interim_id': 'C9H18N2O3_202.131742',
+            'neutral_formula': 'C9H18N2O3',
+            'neutral_formula_mass': 202.13174244717,
+            'compounds': [{'id': 'MAM03375',
+            'name': 'L-Alanyl-L-Leucine',
+            'identifiers': [['humanGEM', 'MAM03375'],
+                ['bigg.metabolite', 'CE5866'],
+                ['pubchem.compound', '6992388'],
+                ['vmhmetabolite', 'CE5866'],
+                ['metanetx.chemical', 'MNXM15786'],
+                ['inchi',
+                'InChI=1S/C9H18N2O3/c1-5(2)4-7(9(13)14)11-8(12)6(3)10/h5-7H,4,10H2,1-3H3,(H,11,12)(H,13,14)/t6-,7+/m1/s1']],
+            'neutral_formula': 'C9H18N2O3',
+            'charge': 0,
+            'charged_formula': 'C9H18N2O3',
+            'neutral_mono_mass': 202.13174244717,
+            'SMILES': '',
+            'inchi': '',
+            'neutral_formula_mass': 202.13174244717}]}
         '''
         KCD = knownCompoundDatabase()
-        KCD.mass_index_list_compounds(self.model['Compounds'])
+        KCD.mass_index_list_compounds(self.model['Compounds'].values())
         KCD.build_emp_cpds_index()
         EED = ExperimentalEcpdDatabase(mode=self.mode, 
                                        mz_tolerance_ppm=self.mz_tolerance_ppm, 
                                        rt_tolerance=self.rt_tolerance)
         EED.build_from_list_peaks(self.userFeatureList)
         EED.extend_empCpd_annotation(KCD)
-        EED.annotate_singleton_mummichog(KCD)       
-        return EED.dict_empCpds
+        EED.annotate_singleton_mummichog(KCD)
+
+        return self.update_identity(EED.dict_empCpds, KCD)
+
+
+    def update_identity(self, dict_empCpds, KCD):
+        '''
+        Updates dict_empCpds by adding field `identity` with compound IDs.
+        E.g. {'identity': ['MAM03375'], ... }
+        This overwrites field `identity` if it exists.
+        '''
+        def _get_kcd_ids_(interim_id, KCD):
+            e = KCD.mass_indexed_compounds.get(interim_id, None)
+            if e:
+                return [x['id'] for x in e['compounds']]
+            else:
+                return []
+
+        for k,v in dict_empCpds.items():
+            if 'list_matches' in v:
+                v['identity'] = []
+                for M in v['list_matches']:
+                    v['identity'] += _get_kcd_ids_(M[0], KCD)
+
+        return dict_empCpds
+
 
     def _construct_EmpiricalCompounds_(self):
         '''
