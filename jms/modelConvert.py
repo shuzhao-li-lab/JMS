@@ -7,6 +7,33 @@ Used in mummichog 3.
 from khipu.epdsConstructor import epdsConstructor
 from .dbStructures import knownCompoundDatabase, ExperimentalEcpdDatabase
 
+default_parameters = {'mode': 'pos',
+                        'mz_tolerance_ppm': 5,
+                        'rt_tolerance': 2,
+                        'isotope_search_patterns': [(1.003355, '13C/12C', (0, 0.8)),
+                                (2.00671, '13C/12C*2', (0, 0.8))],
+                        'adduct_patterns': [(21.982, 'Na/H'),
+                                (41.026549, 'ACN'),
+                                (35.9767, 'HCl'),
+                                (37.955882, 'K/H')],
+                        'extended_adducts': [(1.0078, 'H'),
+                                (-1.0078, '-H'),
+                                (10.991, 'Na/H, double charged'),
+                                (0.5017, '13C/12C, double charged'),
+                                (117.02655, '-NH3'),
+                                (17.02655, 'NH3'),
+                                (-18.0106, '-H2O'),
+                                (18.0106, 'H2O'),
+                                (18.033823, 'NH4'),
+                                (27.01089904, 'HCN'),
+                                (37.94694, 'Ca/H2'),
+                                (32.026215, 'MeOH'),
+                                (43.96389, 'Na2/H2'),
+                                (67.987424, 'NaCOOH'),
+                                (83.961361, 'KCOOH'),
+                                (97.96737927, 'H2SO4'),
+                                (97.97689507, 'H3PO4')],
+ }
 
 def convert_json_model(jmodel):
     '''
@@ -44,8 +71,11 @@ def convert_json_model(jmodel):
     new['version'] = jmodel['meta_data']['version']
     cpdDict,  dict_cpds_def = {}, {}
     for cpd in jmodel['list_of_compounds']:
-        cpdDict[cpd['id']] = cpd    # convert_compound_azimuth_mummichog(cpd, hmdb_dict, kegg_dict)
-        dict_cpds_def[cpd['id']] = cpd['name']
+        if 'neutral_mono_mass' in cpd:
+            cpd['neutral_formula_mass'] = cpd['neutral_mono_mass']
+        if 'neutral_formula_mass' in cpd and cpd['neutral_formula_mass']:
+            cpdDict[cpd['id']] = cpd    # convert_compound_azimuth_mummichog(cpd, hmdb_dict, kegg_dict)
+            dict_cpds_def[cpd['id']] = cpd['name']
     new['Compounds'] = cpdDict
     new['dict_cpds_def'] = dict_cpds_def
     new['metabolic_rxns'] = jmodel['list_of_reactions']
@@ -151,7 +181,7 @@ class DataMeetModel:
     Because neutral mass is inferred from khipu, the match problem is simplified by 
     focusing on neutral mass (formula).
     '''
-    def __init__(self, parameters, MetabolicModel, userFeatureList):
+    def __init__(self, MetabolicModel, userFeatureList, parameters=default_parameters):
         '''
         parameters : dictionary to pass ion mode, m/z and rt tolerance and isotope/adduct patterns.
         MetabolicModel : metabolic model in JSON style dictionary.
@@ -167,8 +197,30 @@ class DataMeetModel:
         self.mz_tolerance_ppm = parameters['mz_tolerance_ppm']
         self.rt_tolerance = parameters['rt_tolerance']
 
-    def _get_ListOfEmpiricalCompounds_(self):
+    def match_all(self):
         '''
+        Match model compounds with empirical compounds, via the JMS KCD-EED architecture.
+        The search here cannot distinguish isomers, thus centering on neutral mass/formula.
+
+        Returns
+        -------
+        dict_empCpds : {id: empCpd, ...} with matched compounds in empCpd['list_matches'],
+            which have KCD empCpd identifiers but compound records need to pull out KCD later.
+        '''
+        KCD = knownCompoundDatabase()
+        KCD.mass_index_list_compounds(self.model['Compounds'])
+        KCD.build_emp_cpds_index()
+        EED = ExperimentalEcpdDatabase(mode=self.mode, 
+                                       mz_tolerance_ppm=self.mz_tolerance_ppm, 
+                                       rt_tolerance=self.rt_tolerance)
+        EED.build_from_list_peaks(self.userFeatureList)
+        EED.extend_empCpd_annotation(KCD)
+        EED.annotate_singleton_mummichog(KCD)       
+        return EED.dict_empCpds
+
+    def _construct_EmpiricalCompounds_(self):
+        '''
+        For testing only. Use EED class for full application, as in self.match_all().
         Returns
         -------
         dict_empCpds : {id: empCpd, ...}
@@ -181,24 +233,3 @@ class DataMeetModel:
                         self.mz_tolerance_ppm,
                         self.rt_tolerance
         )
-
-    def match_all(self):
-        '''
-        Match model compounds with empirical compounds, via the JMS KCD-EED architecture.
-        The search here cannot distinguish isomers, thus centering on neutral mass/formula.
-
-        Returns
-        -------
-        dict_empCpds : {id: empCpd, ...} with matched compounds in empCpd['list_matches']
-        '''
-        KCD = knownCompoundDatabase()
-        KCD.mass_index_list_compounds(self.model['Compounds'])
-        KCD.build_emp_cpds_index()
-        EED = ExperimentalEcpdDatabase(mode=self.mode, 
-                                       mz_tolerance_ppm=self.mz_tolerance_ppm, 
-                                       rt_tolerance=self.rt_tolerance)
-        EED.dict_empCpds = self._get_ListOfEmpiricalCompounds_()
-        EED.extend_empCpd_annotation(KCD)
-        EED.annotate_singletons(KCD)       
-        return EED.dict_empCpds
-

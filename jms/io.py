@@ -67,6 +67,7 @@ def read_table_to_peaks(infile,
             fid = _make_id(ii, mz, rt)
         peak = {'id_number': fid, 'mz': mz, 'rtime': rt, 'apex': rt}
         if has_header and full_extract:
+            # will remove redundant fields
             peak2 = dict(zip(header, a))
             peak2.update(peak)
             peak = peak2

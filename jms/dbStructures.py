@@ -151,7 +151,7 @@ class knownCompoundDatabase:
         for k, v in self.mass_indexed_compounds.items():
             # neutral
             neutral_peak_list.append(
-                {'mz': v['neutral_formula_mass'], 'parent_epd_id': k, 'ion_relation': '',}
+                {'mz': v['neutral_formula_mass'], 'parent_epd_id': k, 'ion_relation': 'neutral',}
             )
 
             # do pos ions now
@@ -283,26 +283,21 @@ class knownCompoundDatabase:
 #----------------------------------------------------------------------------------------
 class ExperimentalEcpdDatabase:
     '''
-    Build a boutique data store for user's experimental data, input being list of peaks or empCpds (i.e. emp_cpd).
+    Build a boutique data store for user's experimental data, list of JSON features/peaks.
     Allow search of Compounds, which support targeted compound search in a dataset.
-
-    The construction of empirical compounds (empCpds) is based on 
-    1) initial search of ion patterns (C13, +H, +Na, -H, +Na-2H +Cl-) based on mass2chem.epdsConstructor
-    2) match to databased generated through knownCompoundDatabase
-    3) augment formula match via data.list_formula_mass (HMDB4+PubChemLite)
-    4) formula based grid search to extend all empCpds
-
-    self.dict_empCpds is updated in situ.
-    Not using check_isotope_ratios. First pass by khipu generates JSON annotations, 
-        where ratios can be calculated after.
     '''
-    def __init__(self, mode='pos', mz_tolerance_ppm=5, rt_tolerance=2):
+    def __init__(self, 
+                 mode='pos', 
+                 mz_tolerance_ppm=5, 
+                 rt_tolerance=2,
+                 ):
         '''
         mode: ionizaation mode, 'pos' or 'neg'.
         mz_tolerance_ppm: ppm tolerance in examining m/z patterns.
         rt_tolerance: tolerance threshold for deviation in retetion time, arbitrary unit depending on input data.
                 Default intended as 2 seconds.
-        Takes input list of peaks. Peaks here are usually features.
+        The isotope/adduct patterns here are populated via self.get_isotope_adduct_patterns, as imported from khipu.
+        But one can directly overwrite the patterns for customization (e.g. in asari).
         '''
         self.mode = mode
         self.mz_tolerance_ppm = mz_tolerance_ppm
@@ -316,10 +311,16 @@ class ExperimentalEcpdDatabase:
         self.peak_to_empCpd = {}
         self.peak_to_empCpd_ion_relation = {}
 
-    def get_isotope_adduct_patterns(self):
+    def get_isotope_adduct_patterns(self, 
+                                    adduct_search_patterns=adduct_search_patterns,
+                                    adduct_search_patterns_neg=adduct_search_patterns_neg,
+                                    isotope_search_patterns=isotope_search_patterns[:2],
+                                    extended_adducts=extended_adducts
+                                    ):
         '''
         Populate isotope/adduct patterns for this instance.
-        The isotope/adduct patterns here are imported from khipu as global variables here.
+        The default isotope/adduct patterns here are imported from khipu.
+        The default isotope_search_patterns are limited to M0 and M1.
         '''
         self.adduct_patterns = adduct_search_patterns
         if self.mode == 'neg':
@@ -329,7 +330,7 @@ class ExperimentalEcpdDatabase:
 
     def build_from_list_peaks(self, list_peaks):
         '''
-        Wrapper of khipu epdsConstructor.
+        Wrapper of khipu epdsConstructor, to construct empirical compounds (empCpds).
         Updates self.dict_empCpds and does self.index_empCpds().
 
         list_peaks : [{'parent_masstrace_id': 1670, 'mz': 133.09702315984987, 'rtime': 654, 
@@ -371,10 +372,11 @@ class ExperimentalEcpdDatabase:
     def index_empCpds(self):
         '''
         Build indices for self.list_peaks and self.empCpds.
-        Updates : self.indexed_peaks, self.formula_tree, self.indexed_empCpds
+        Khipu has peak:empCpd built N:1 but other methods should comply too.
 
-        Minor possibility that peak:empCpd is not N:1.
-        ?? round 1 index of self.dict_empCpds; round 2 to be done after annotation
+        Updates
+        -------
+        self.indexed_peaks, self.formula_tree, self.indexed_empCpds
         '''
         for P in self.list_peaks:
             self.dict_peaks[P['id_number']] = P
@@ -480,16 +482,12 @@ class ExperimentalEcpdDatabase:
         This searches KCD for the list of empCpds.
         With khipu, most empCpds have neutral mass, which is used for KCD search.
         If no neutral mass, an anchor ion is used for KCD search (KCD.search_emp_cpd_single).
-
-        Before khipu:
-        self.empCpds_formula_search(KCD)
-        self.__extend_empCpds__()
+        Returned list_matches have KCD empCpd identifiers but compound records need to pull out KCD later.
         '''
         epd_search_result_dict = self.annotate_empCpds_against_KCD(KCD, self.mz_tolerance_ppm)
         for interim_id, V in epd_search_result_dict.items():
             if V:
                 self.dict_empCpds[interim_id]['list_matches'] = V
-
 
     def empCpds_formula_search(self, KCD):
         '''
@@ -502,8 +500,10 @@ class ExperimentalEcpdDatabase:
                 # update empCpd with formula matches
                 self.dict_empCpds[interim_id]['list_matches'] = V
                 #       expecting probem from khipu to this
-                self.dict_empCpds[interim_id]['neutral_formula'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula']
-                self.dict_empCpds[interim_id]['neutral_formula_mass'] = KCD.mass_indexed_compounds[V[0][0]]['neutral_formula_mass']
+                self.dict_empCpds[interim_id]['neutral_formula'] = \
+                    KCD.mass_indexed_compounds[V[0][0]]['neutral_formula']
+                self.dict_empCpds[interim_id]['neutral_formula_mass'] = \
+                    KCD.mass_indexed_compounds[V[0][0]]['neutral_formula_mass']
             else:
                 # first peak should be anchor
                 anchor_mz = self.dict_empCpds[interim_id]['MS1_pseudo_Spectra'][0]['mz']
@@ -541,6 +541,11 @@ class ExperimentalEcpdDatabase:
         '''
         Search singletons for formulae first by KCD search then .data.formula_tree.
         KCD: knownCompoundDatabase instance.
+
+        Returns
+        -------
+        List of first matched KCD compound for each singleton in self.dict_peaks, e.g.
+        [('F17904', {'interim_id': 15321, 'neutral_formula_mass': 916.606449, 'neutral_formula': 'C56H84O10',...}), ...]
         '''
         found = []
         singletons = [p for p in self.dict_peaks if p not in self.peak_to_empCpd.keys()]
@@ -549,8 +554,10 @@ class ExperimentalEcpdDatabase:
             list_matches = KCD.search_mz_single(_mz, self.mode, self.mz_tolerance_ppm)
             # [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}]
             if list_matches:
-                # take 1st match only here
+                # take 1st match only here; will model better in future
                 _epd = KCD.mass_indexed_compounds[list_matches[0]['parent_epd_id']]
+                _epd['isotope'] = '13C/12C'
+                _epd['ion_relation'] = _epd['modification'] = list_matches[0]['ion_relation']
                 found.append((p, _epd))
             else:
                 # formula search
@@ -559,6 +566,28 @@ class ExperimentalEcpdDatabase:
                     found.append((p, F))            # p is id_number
 
         return found
+    
+
+    def annotate_singleton_mummichog(self, KCD):
+        '''
+        This applies to KCD using a metabolic model as the sole database.
+
+        Updates
+        -------
+        self.dict_empCpds : {id: empCpd, ...}
+        '''
+        singletons = [p for p in self.dict_peaks if p not in self.peak_to_empCpd.keys()]
+        for p in singletons:
+            peak = self.dict_peaks[p]
+            interim_id = 'epd_' + peak['id_number']
+            list_matches = KCD.search_mz_single(peak['mz'], self.mode, self.mz_tolerance_ppm)
+            # [{'mz': 130.017306555, 'parent_epd_id': 'C4H3FN2O2_130.017856', 'ion_relation': 'M[1+]'}]
+            if list_matches:
+                self.dict_empCpds[interim_id] = {'interim_id': interim_id,
+                    'MS1_pseudo_Spectra': [peak],
+                    'list_matches': [(LL['parent_epd_id'], LL['ion_relation'], 1) for LL in list_matches],
+                }
+
 
     def annotate_singletons(self, KCD):
         '''
@@ -572,6 +601,8 @@ class ExperimentalEcpdDatabase:
         '''
         formula_to_peaks = {}
         found = self.singleton_formula_search(KCD)
+        # multiple singletons can match to same formula as different ions, 
+        # if ion calculation differs btw here and KCD
         for p,F in found:
             k = F['neutral_formula']
             if k in formula_to_peaks:
