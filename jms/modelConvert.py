@@ -181,14 +181,17 @@ class DataMeetModel:
     Because neutral mass is inferred from khipu, the match problem is simplified by 
     focusing on neutral mass (formula).
     '''
-    def __init__(self, MetabolicModel, userFeatureList, parameters=default_parameters):
+    def __init__(self, MetabolicModel, userFeatureList=None, userListEmpCpds=None, parameters=default_parameters):
         '''
+        Besides MetabolicModel, this takes either userFeatureList or userListEmpCpds.
         parameters : dictionary to pass ion mode, m/z and rt tolerance and isotope/adduct patterns.
         MetabolicModel : metabolic model in JSON style dictionary.
         userFeatureList : list of JSON style features
+        userListEmpCpds : list of empirical compounds, which can be constructed and processed elsewhere
         '''
         self.model = MetabolicModel
         self.userFeatureList = userFeatureList
+        self.userListEmpCpds = userListEmpCpds
         
         self.mode = parameters['mode']
         self.isotope_search_patterns = parameters['isotope_search_patterns']
@@ -253,7 +256,10 @@ class DataMeetModel:
         EED = ExperimentalEcpdDatabase(mode=self.mode, 
                                        mz_tolerance_ppm=self.mz_tolerance_ppm, 
                                        rt_tolerance=self.rt_tolerance)
-        EED.build_from_list_peaks(self.userFeatureList)
+        if self.userFeatureList:
+            EED.build_from_list_peaks(self.userFeatureList)
+        elif self.userListEmpCpds:
+            EED.build_from_list_empCpds(self.userListEmpCpds)
         EED.extend_empCpd_annotation(KCD)
         EED.annotate_singleton_mummichog(KCD)
 

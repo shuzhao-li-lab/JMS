@@ -5,13 +5,12 @@ Based on mass2chem.formula
 2. to search for any formula (to-do)
 '''
 
-from mass2chem.formula import compute_adducts_formulae
-from .search import build_centurion_tree, find_best_match_centurion_indexed_list
+from mass2chem.formula import compute_adducts_formulae, \
+                                    parse_chemformula_dict, \
+                                        add_formula_dict, \
+                                            dict_to_hill_formula
 
-# The following imports are used in function of `adjust_charge_in_formula`
-from mass2chem.formula import parse_chemformula_dict
-from mass2chem.formula import add_formula_dict
-from mass2chem.formula import dict_to_hill_formula
+from .search import build_centurion_tree, find_best_match_centurion_indexed_list
 
 
 def get_formula_ions_tree(list_formula_mass, mode='pos'):
@@ -28,7 +27,6 @@ def get_formula_ions_tree(list_formula_mass, mode='pos'):
 def search_mz_formula_tree(mz, formula_tree, limit_ppm=5):
     '''
     return the best matched ion (as peak format) in formula_tree.
-
     formula_tree = get_formula_ions_tree(list_formula_mass, mode='pos')
     '''
     return find_best_match_centurion_indexed_list(mz, formula_tree, limit_ppm)

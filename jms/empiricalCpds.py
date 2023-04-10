@@ -56,7 +56,7 @@ def load_epds_from_json(file):
     return list(epds.values())
 
 
-def filter_epds(list_epds, neutral_formula_mass=True, multiple_ions=True):
+def filter_epds(list_epds, neutral_formula_mass=True, multiple_ions=True, C13=True):
     '''Filter list of empCpds by neutral_formula_mass or by multiple_ions.
     list_epds : [{'interim_id': 'kp100_128.0951', 'neutral_formula_mass': 128.09508427175538, 'neutral_formula': None, 
         'Database_referred': [], 'identity': [], 'MS1_pseudo_Spectra': [
@@ -80,8 +80,18 @@ def filter_epds(list_epds, neutral_formula_mass=True, multiple_ions=True):
         result = [x for x in result if x['neutral_formula_mass']]
     if multiple_ions:
         result = [x for x in result if len(x['MS1_pseudo_Spectra'])>1]
+    if C13:
+        result = [x for x in result if check_13C_M1(x)]
     return result
 
+def check_13C_M1(empCpd):
+    '''Check presence of pair of M1 13C ion and the M0 12C ion.
+    '''
+    ions = [x['isotope'] for x in empCpd['MS1_pseudo_Spectra'] if 'isotope' in x]
+    if '13C/12C' in ions and 'M0' in ions:
+        return True
+    else:
+        return False
 
 def get_neutrals(list_epds):
     neutrals = []
@@ -92,7 +102,6 @@ def get_neutrals(list_epds):
         p['rtime'] = np.mean([x['rtime'] for x in v['MS1_pseudo_Spectra']])
         neutrals.append(p)
     return neutrals
-
 
 def get_match(cpds, mztree, ppm=5):
     '''Find matches of a list of cpds in mztree.
@@ -105,4 +114,3 @@ def get_match(cpds, mztree, ppm=5):
             if _m:
                 match.append( (x, _m) )
     return match
-

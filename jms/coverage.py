@@ -2,16 +2,81 @@
 Test coverage of a dataset or a model on pathways/ontologies.
 
 Could exclude currency metabolites in future.
-
-To refactor -
-
+Refactoring...
 
 '''
 
-from .modelConvert import convert_json_model
-from .search import build_centurion_tree
+from .modelConvert import convert_json_model, DataMeetModel
+from .search import build_centurion_tree, find_all_matches_centurion_indexed_list
+from .data.humangem_pathways import humangem
 from .empiricalCpds import *
 
+def get_pathwayCoverage_cpds_to_epds(list_epds, pathway_collection=humangem, ppm=5):
+    '''
+    Match list_epds to list_of_metabolites with pathway memberships.
+    list_epds : input list of empirical compounds. Users can apply filtering before this.
+    pathway_collection : humangem = {
+                        'version': 'https://github.com/SysBioChalmers/Human-GEM, retrieved 2022-02-09',
+                        'list_of_pathways': list_of_pathways,
+                        'list_of_metabolites': list_of_metabolites,
+                    }
+    Returns
+    -------
+    List of matches as [(cpd['id'], cpd['name'], matched_list of epds), ...]
+
+    Examples
+    --------
+    list_of_metabolites[55]:
+        {'id': 'MAM00067', 'mw': 1101.43877624496, 'name': '(2E)-tricosenoyl-CoA', 'pathways': ['Fatty acid elongation (odd-chain)']}
+    humangem['list_of_pathways'][11]:
+        {'id': 'group12',
+            'name': 'Beta oxidation of branched-chain fatty acids (mitochondrial)',
+            'rxns': ['MAR03522',
+            'MAR03523',
+            'MAR03524',
+                ...
+            'MAR03533',
+            'MAR03534'],
+            'cpds': ['MAM00703',
+            'MAM02040',
+            'MAM00934',
+            'MAM02774',
+            'MAM00845',
+            'MAM00933',
+                ...,
+            'MAM00844'],
+            'ecs': ['1.3.8.7',
+            '5.1.99.4',
+            '2.3.1.16',
+            '1.1.1.211',
+            '4.2.1.17',
+            '1.1.1.35',
+            '1.3.8.8'],
+            'genes': ['ENSG00000138796',
+            'ENSG00000113790']}
+    
+    '''
+    neutrals = get_neutrals(list_epds)
+    mztree = build_centurion_tree(neutrals)
+    matched = []
+    for cpd in pathway_collection['list_of_metabolites']:
+        MM = find_all_matches_centurion_indexed_list(cpd['mw'], mztree, ppm)
+        if MM:
+            matched.append((cpd['id'], cpd['name'], MM))
+
+    return matched
+
+def get_pathwayCoverage_mummichog(list_epds, metabolic_model, ppm=5):
+    '''Match list_epds to pathways in mummichog style, using modelConvert.DataMeetModel.
+    '''
+    DMM = DataMeetModel(MetabolicModel=metabolic_model, userFeatureList=None, userListEmpCpds=list_epds)
+    DMM.mz_tolerance_ppm = ppm
+    return DMM.match_all()
+
+
+#
+# ------------------------------------------------------------------------------------------
+# Convenience functions below for quick analysis; not suitabe for production software 
 
 def report_pathway_coverage(mcg_model, list_epds, neutral_formula_mass=True, multiple_ions=True, ppm=5):
     '''Returns a list of pathways with matched cpds to list_epds.
