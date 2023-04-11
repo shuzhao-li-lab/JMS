@@ -9,6 +9,7 @@ Refactoring...
 from .modelConvert import convert_json_model, DataMeetModel
 from .search import build_centurion_tree, find_all_matches_centurion_indexed_list
 from .data.humangem_pathways import humangem
+# from .data.smpdb_pathways import smpdb
 from .empiricalCpds import *
 
 def get_pathwayCoverage_cpds_to_epds(list_epds, pathway_collection=humangem, ppm=5):
@@ -16,10 +17,10 @@ def get_pathwayCoverage_cpds_to_epds(list_epds, pathway_collection=humangem, ppm
     Match list_epds to list_of_metabolites with pathway memberships.
     list_epds : input list of empirical compounds. Users can apply filtering before this.
     pathway_collection : humangem = {
-                        'version': 'https://github.com/SysBioChalmers/Human-GEM, retrieved 2022-02-09',
-                        'list_of_pathways': list_of_pathways,
-                        'list_of_metabolites': list_of_metabolites,
-                    }
+                                'version': 'https://github.com/SysBioChalmers/Human-GEM, retrieved 2022-02-09',
+                                'dict_pathways': dict_pathways,
+                                'list_of_metabolites': list_of_metabolites,
+                            }
     Returns
     -------
     List of matches as [(cpd['id'], cpd['name'], matched_list of epds), ...]
@@ -28,33 +29,13 @@ def get_pathwayCoverage_cpds_to_epds(list_epds, pathway_collection=humangem, ppm
     --------
     list_of_metabolites[55]:
         {'id': 'MAM00067', 'mw': 1101.43877624496, 'name': '(2E)-tricosenoyl-CoA', 'pathways': ['Fatty acid elongation (odd-chain)']}
-    humangem['list_of_pathways'][11]:
-        {'id': 'group12',
-            'name': 'Beta oxidation of branched-chain fatty acids (mitochondrial)',
-            'rxns': ['MAR03522',
-            'MAR03523',
-            'MAR03524',
-                ...
-            'MAR03533',
-            'MAR03534'],
-            'cpds': ['MAM00703',
-            'MAM02040',
-            'MAM00934',
-            'MAM02774',
-            'MAM00845',
-            'MAM00933',
-                ...,
-            'MAM00844'],
-            'ecs': ['1.3.8.7',
-            '5.1.99.4',
-            '2.3.1.16',
-            '1.1.1.211',
-            '4.2.1.17',
-            '1.1.1.35',
-            '1.3.8.8'],
-            'genes': ['ENSG00000138796',
-            'ENSG00000113790']}
-    
+    list(humangem['dict_pathways'].items())[11]:
+        ('group12',
+        {'name': 'Beta oxidation of branched-chain fatty acids (mitochondrial)',
+        'cpds': ['MAM00845',
+        'MAM01802',
+        ...,
+        'MAM02040']})
     '''
     neutrals = get_neutrals(list_epds)
     mztree = build_centurion_tree(neutrals)
