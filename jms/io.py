@@ -33,8 +33,8 @@ peak_attribute_dict = {
 }
 
 def read_table_to_peaks(infile, 
-                        has_header=True, mz_col=1, rtime_col=2, feature_id=None,
-                        full_extract=False,
+                        has_header=True, mz_col=1, rtime_col=2, intensity=(11,21), feature_id=None,
+                        full_extract=True, max_col=21,
                         delimiter='\t'):
     '''
     Read a text feature table, and 
@@ -54,11 +54,11 @@ def read_table_to_peaks(infile,
     list_peaks = []
     w = open(infile).readlines()
     if has_header:
-        header = w[0].rstrip().split(delimiter)
+        header = w[0].rstrip().split(delimiter)[:max_col]
         w = w[1:]
     ii = 0
     for line in w:
-        a = line.split(delimiter)   # not rstrip, so trailing EOL will be carried forward
+        a = line.split(delimiter)[:max_col]   # not rstrip, so trailing EOL will be carried forward
         mz, rt = float(a[mz_col]), float(a[rtime_col])
         if feature_id != None:
             fid = a[feature_id].strip()
@@ -76,8 +76,6 @@ def read_table_to_peaks(infile,
 
     return list_peaks
 
-
-# 
 
 def read_tsv_hmdb_to_empCpds(infile, delimiter='\t'):
     '''
