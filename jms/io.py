@@ -60,12 +60,13 @@ def read_table_to_peaks(infile,
     for line in w:
         a = line.split(delimiter)[:max_col]   # not rstrip, so trailing EOL will be carried forward
         mz, rt = float(a[mz_col]), float(a[rtime_col])
+        intensities = [float(x) for x in a[intensity[0]: intensity[1]]]
         if feature_id != None:
             fid = a[feature_id].strip()
         else:
             ii += 1
             fid = _make_id(ii, mz, rt)
-        peak = {'id_number': fid, 'mz': mz, 'rtime': rt, 'apex': rt}
+        peak = {'id_number': fid, 'mz': mz, 'rtime': rt, 'apex': rt, 'representative_intensity': sum(intensities) / len(intensities)}
         if has_header and full_extract:
             # will remove redundant fields
             peak2 = dict(zip(header, a))
