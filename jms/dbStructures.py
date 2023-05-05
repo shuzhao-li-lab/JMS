@@ -627,7 +627,7 @@ class ExperimentalEcpdDatabase:
                 else:
                     # not coeluted, new empCpd
                     new_id_start += 1
-                    self.dict_empCpds[new_id_start] = {'interim_id': new_id_start,
+                    self.dict_empCpds[new_id_start] = {'interim_id': str(new_id_start),
                             'neutral_formula_mass': neutral_formula_mass, 'neutral_formula': formula,
                             'MS1_pseudo_Spectra': self.__extend_peakList__(
                                 formula, neutral_formula_mass, tmp, peakTree, self.mz_tolerance_ppm),
@@ -635,7 +635,7 @@ class ExperimentalEcpdDatabase:
                     tmp = [_P, ]
 
             new_id_start += 1
-            self.dict_empCpds[new_id_start] = {'interim_id': new_id_start,
+            self.dict_empCpds[new_id_start] = {'interim_id': str(new_id_start),
                     'neutral_formula_mass': neutral_formula_mass, 'neutral_formula': formula,
                     'MS1_pseudo_Spectra': self.__extend_peakList__(
                                 formula, neutral_formula_mass, tmp, peakTree, self.mz_tolerance_ppm),
