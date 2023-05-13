@@ -328,7 +328,11 @@ class ExperimentalEcpdDatabase:
         self.isotope_search_patterns = isotope_search_patterns
         self.extended_adducts = extended_adducts
 
-    def build_from_list_peaks(self, list_peaks):
+    def build_from_list_peaks(self, 
+                              list_peaks, 
+                              charges=[1, 2, 3],
+                              has_parent_masstrack=True,
+                              ):
         '''
         Wrapper of khipu epdsConstructor, to construct empirical compounds (empCpds).
         Updates self.dict_empCpds and does self.index_empCpds().
@@ -337,6 +341,16 @@ class ExperimentalEcpdDatabase:
                 'height': 14388.0, 'id_number': 555}, ...]
         isotope/adduct patterns, mz_tolerance_ppm and rt_tolerance are from self,
         as they are parameters to this class.
+
+        charges : multiple charged ions to consider.
+        has_parent_masstrack : True if from asari. 
+            Used to determine the need of setting parent_masstrack.
+
+        Updates
+        -------
+        self.list_peaks
+        self.dict_empCpds
+        self.indexed_peaks, self.formula_tree, self.indexed_empCpds
 
         Future updates can include enforcing overlap in scans not just rtime tolerance.
         '''
@@ -361,6 +375,8 @@ class ExperimentalEcpdDatabase:
                         self.extended_adducts,
                         self.mz_tolerance_ppm,
                         self.rt_tolerance,
+                        charges,
+                        has_parent_masstrack,
         ) 
         self.index_empCpds()
 
