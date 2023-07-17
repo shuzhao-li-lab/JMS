@@ -8,9 +8,9 @@ import numpy as np
 from .search import find_all_matches_centurion_indexed_list
 from khipu.epdsConstructor import epdsConstructor
 from khipu.utils import adduct_search_patterns, \
-                            adduct_search_patterns_neg, \
-                                isotope_search_patterns, \
-                                    extended_adducts
+                        adduct_search_patterns_neg, \
+                        isotope_search_patterns, \
+                        extended_adducts
 
 
 def get_khipu_epds_from_list_peaks(
@@ -84,24 +84,26 @@ def filter_epds(list_epds, neutral_formula_mass=True, multiple_ions=True, C13=Tr
         result = [x for x in result if check_13C_M1(x)]
     return result
 
-def check_13C_M1(empCpd):
-    '''Check presence of pair of M1 13C ion and the M0 12C ion.
-    '''
-    ions = [x['isotope'] for x in empCpd['MS1_pseudo_Spectra'] if 'isotope' in x]
-    if '13C/12C' in ions and 'M0' in ions:
-        return True
+def check_isotope_pair(empCpd, isotope_1, isotope_2, modification=None):
+    if modification:
+        ions = {x['isotope'] for x in empCpd['MS1_pseudo_spectra'] if 'isotope' in x and x['modification'] == modification}
     else:
-        return False
+        ions = {x['isotope'] for x in empCpd['MS1_pseudo_spectra'] if 'isotope' in x}
+    return isotope_1 in ions and isotope_2 in ions
+
+def check_13C_M1(empCpd):
+    '''
+    Check presence of pair of M1 13C ion and the M0 12C ion.
+
+    Legacy function, now deprecated by check_isotope_pair. This is for compatibility. 
+    '''
+    return check_isotope_pair(empCpd, '13C/12C', 'M0')
 
 def get_neutrals(list_epds):
-    neutrals = []
-    for v in list_epds:
-        p = {}
-        p['id'] = v['interim_id']
-        p['mz'] = v['neutral_formula_mass']
-        p['rtime'] = np.mean([x['rtime'] for x in v['MS1_pseudo_Spectra']])
-        neutrals.append(p)
-    return neutrals
+    return [{'id': v['interim_id'], 
+             'mz': v['neutral_formula_mass'], 
+             'rtime': np.mean(x['rtime'] for x in v['MS1_pseudo_Spectra'])} for v in list_epds]
+
 
 def get_match(cpds, mztree, ppm=5):
     '''Find matches of a list of cpds in mztree.
