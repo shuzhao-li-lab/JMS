@@ -25,17 +25,16 @@ Input/Output functions
         'other_ids': {'PubChem': '131753609', 'KEGG': '', 'ChEBI': ''}}
 '''
 
-peak_attribute_dict = {
-    'm/z': 'mz',
-    'mz': 'mz',
-    'apex': 'rtime',
-    # ...,
-}
-
 def read_table_to_peaks(infile, 
-                        has_header=True, mz_col=1, rtime_col=2, intensity=(11,21), feature_id=None,
-                        full_extract=True, max_col=21,
-                        delimiter='\t'):
+                        has_header=True, 
+                        mz_col=1, 
+                        rtime_col=2, 
+                        intensity=(11,21), 
+                        feature_id=None,
+                        full_extract=True, 
+                        max_col=False,
+                        delimiter='\t',
+                        continuous_intensities=True):
     '''
     Read a text feature table, and 
     return list of peaks, e.g. [ {
@@ -48,34 +47,41 @@ def read_table_to_peaks(infile,
     full_extract: to keep all fields in output as strings, only if has_header.
     feature_id: if None, create id for each peak/feature.
     '''
+
+    # todo - write tests
+
     def _make_id(ii, mz, rt):
         return 'F' + str(ii) + '_' + str(round(mz, 6)) + '@' + str(round(rt, 2))
 
+    if mz_col > max_col:
+        raise Exception('mz_col value exceed max_col value')
+    if rtime_col > max_col:
+        raise Exception('rtime_col value exceed max_col value')
+    for intensity in intensities:
+        if intensity > max_col:
+            raise Exception('intensity column value exceed max_col value')
+
     list_peaks = []
-    w = open(infile).readlines()
-    if has_header:
-        header = w[0].rstrip().split(delimiter)[:max_col]
-        w = w[1:]
-    ii = 0
-    for line in w:
-        a = line.split(delimiter)[:max_col]   # not rstrip, so trailing EOL will be carried forward
-        mz, rt = float(a[mz_col]), float(a[rtime_col])
-        intensities = [float(x) for x in a[intensity[0]: intensity[1]]]
-        if feature_id != None:
-            fid = a[feature_id].strip()
+    for line_no, line in enumerate(open(infile)):
+        values = line.rstrip().split(delimiter)
+        values = values if not max_col else values[:max_col]
+        if line_no == 0 and has_header:
+            header = values
+        mz = float(values[mz_col])
+        rt = float(values[rtime_col])
+        if continuous_intensities:
+            intensities = [float(x) for x in values[intensity[0]: intensity[1]]]        
         else:
-            ii += 1
-            fid = _make_id(ii, mz, rt)
-        peak = {'id_number': fid, 'mz': mz, 'rtime': rt, 'apex': rt, 'representative_intensity': sum(intensities) / len(intensities)}
-        if has_header and full_extract:
-            # will remove redundant fields
-            peak2 = dict(zip(header, a))
-            peak2.update(peak)
-            peak = peak2
-
-        list_peaks.append( peak )
-
-    return list_peaks
+            intensities = [float(values[x]) for x in intensity]
+        fid = _make_id(line_no, mz, rt) if not feature_id else values[feature_id].strip()
+        peak = {'id_number': fid, 
+                'mz': mz, 
+                'rtime': rt, 
+                'apex': rt, 
+                'representative_intensity': sum(intensities) / len(intensities)}
+        if has_header and full_extract:  
+            peak.update(dict(zip(header, values)))
+        list_peaks.append(peak)
 
 
 def read_tsv_hmdb_to_empCpds(infile, delimiter='\t'):
@@ -132,5 +138,3 @@ def read_tsv_hmdb_to_empCpds(infile, delimiter='\t'):
             }
         )
     return list_empCpds
-
-
