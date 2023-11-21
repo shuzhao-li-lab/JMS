@@ -53,9 +53,11 @@ def read_table_to_peaks(infile,
 
     list_peaks = []
     w = open(infile).readlines()
-    max_col = -1 if full_extract else max_col
     if has_header:
-        header = w[0].rstrip().split(delimiter)[:max_col]
+        if full_extract:
+            header = w[0].rstrip().split(delimiter)
+        else:
+            header = w[0].rstrip().split(delimiter)[:max_col]
         w = w[1:]
     ii = 0
     for line in w:
