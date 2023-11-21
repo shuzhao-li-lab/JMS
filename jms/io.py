@@ -56,6 +56,7 @@ def read_table_to_peaks(infile,
     if has_header:
         if full_extract:
             header = w[0].rstrip().split(delimiter)
+            max_col = len(header)
         else:
             header = w[0].rstrip().split(delimiter)[:max_col]
         w = w[1:]
