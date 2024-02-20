@@ -1,10 +1,3 @@
-'''
-Based on mass2chem.formula 
-
-1. to find formula for anchor ions
-2. to search for any formula (to-do)
-'''
-
 from mass2chem.formula import compute_adducts_formulae, \
                                     parse_chemformula_dict, \
                                         add_formula_dict, \

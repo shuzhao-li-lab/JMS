@@ -631,7 +631,7 @@ class ExperimentalEcpdDatabase:
                                                   P['id_number'] not in found_peaks]
         peakTree = build_centurion_tree(peakList)
 
-        new_id_start = len(self.dict_empCpds) + 10000
+        new_id_start = len(self.dict_empCpds)
         for formula, PP in formula_to_peaks.items():
             neutral_formula_mass = PP[0][1]['neutral_formula_mass']
             P1 = self.dict_peaks[PP[0][0]]
@@ -643,7 +643,7 @@ class ExperimentalEcpdDatabase:
                 else:
                     # not coeluted, new empCpd
                     new_id_start += 1
-                    self.dict_empCpds[new_id_start] = {'interim_id': str(new_id_start),
+                    self.dict_empCpds[new_id_start] = {'interim_id': '_singleton_' + str(new_id_start),
                             'neutral_formula_mass': neutral_formula_mass, 'neutral_formula': formula,
                             'MS1_pseudo_Spectra': self.__extend_peakList__(
                                 formula, neutral_formula_mass, tmp, peakTree, self.mz_tolerance_ppm),
@@ -651,7 +651,7 @@ class ExperimentalEcpdDatabase:
                     tmp = [_P, ]
 
             new_id_start += 1
-            self.dict_empCpds[new_id_start] = {'interim_id': str(new_id_start),
+            self.dict_empCpds[new_id_start] = {'interim_id': '_singleton_' + str(new_id_start),
                     'neutral_formula_mass': neutral_formula_mass, 'neutral_formula': formula,
                     'MS1_pseudo_Spectra': self.__extend_peakList__(
                                 formula, neutral_formula_mass, tmp, peakTree, self.mz_tolerance_ppm),
