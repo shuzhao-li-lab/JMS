@@ -556,6 +556,8 @@ class ExperimentalEcpdDatabase:
     def singleton_formula_search(self, KCD):
         '''
         Search singletons for formulae first by KCD search then .data.formula_tree.
+        Allowing flexible M0 adducts provided in KCD.
+        
         KCD: knownCompoundDatabase instance.
 
         Returns
@@ -572,7 +574,7 @@ class ExperimentalEcpdDatabase:
             if list_matches:
                 # take 1st match only here; will model better in future
                 _epd = KCD.mass_indexed_compounds[list_matches[0]['parent_epd_id']]
-                _epd['isotope'] = '13C/12C'
+                _epd['isotope'] = 'M0'
                 _epd['ion_relation'] = _epd['modification'] = list_matches[0]['ion_relation']
                 found.append((p, _epd))
             else:
