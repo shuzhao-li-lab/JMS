@@ -33,8 +33,8 @@ peak_attribute_dict = {
 }
 
 def read_table_to_peaks(infile, 
-                        has_header=True, mz_col=1, rtime_col=2, intensity=(11,21), feature_id=None,
-                        full_extract=True, max_col=21,
+                        has_header=True, mz_col=1, rtime_col=2, intensity=None, feature_id=None,
+                        full_extract=True, max_col=None,
                         delimiter='\t'):
     '''
     Read a text feature table, and 
@@ -51,35 +51,29 @@ def read_table_to_peaks(infile,
     def _make_id(ii, mz, rt):
         return 'F' + str(ii) + '_' + str(round(mz, 6)) + '@' + str(round(rt, 2))
 
-    list_peaks = []
-    w = open(infile).readlines()
+    with open(infile) as ft_fh:
+        ft = ft_fh.readlines()
     if has_header:
-        if full_extract:
-            header = w[0].rstrip().split(delimiter)
-            max_col = len(header)
-        else:
-            header = w[0].rstrip().split(delimiter)[:max_col]
-        w = w[1:]
-    ii = 0
-    for line in w:
-        a = line.split(delimiter)[:max_col]   # not rstrip, so trailing EOL will be carried forward
-        mz, rt = float(a[mz_col]), float(a[rtime_col])
-        intensities = [float(x) for x in a[intensity[0]: intensity[1]]]
-        if feature_id != None:
-            fid = a[feature_id].strip()
-        else:
-            ii += 1
-            fid = _make_id(ii, mz, rt)
-        peak = {'id_number': fid, 'mz': mz, 'rtime': rt, 'apex': rt, 'representative_intensity': sum(intensities) / len(intensities)}
+        header = ft[0].rstrip().split(delimiter)
+        if max_col and not full_extract:
+            header = header[:max_col]
+        ft = ft[1:]
+    list_peaks = []
+    for ii, entry in enumerate(ft):
+        values = entry.split(delimiter)
+        if max_col and not full_extract:
+            values = line[:max_col]
+        mz, rt = float(values[mz_col]), float(values[rtime_col])
+        fid = values[feature_id].strip() if feature_id else _make_id(ii, mz, rt)
+        representative_intensity = [float(x) for x in values[intensity[0]: intensity[1]]] if intensity else 0
+        peak = {'id_number': fid, 'id': fid, 'mz': mz, 'rtime': rt, 'apex': rt, 'representative_intensity': representative_intensity}
         if has_header and full_extract:
-            # will remove redundant fields
-            peak2 = dict(zip(header, a))
-            peak2.update(peak)
-            peak = peak2
-
-        list_peaks.append( peak )
-
+            for k, v in zip(header, values):
+                if k not in peak:
+                    peak[k] = float(v)
+        list_peaks.append(peak)
     return list_peaks
+
 
 
 def read_tsv_hmdb_to_empCpds(infile, delimiter='\t'):
