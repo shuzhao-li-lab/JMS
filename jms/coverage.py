@@ -18,12 +18,16 @@ def report_khipu_statistics(json_epd_file, snr=5, shape=0.9, natural_ratio_limit
     Get numbers of khipus and singletons, and isopairs and good khipus.
     Good khipu = with isopair and M0 being a good feature.
 
+    num_isopair_mtracks is based on num_good_khipus. 
+    Thus the ratio num_good_khipus/num_isopair_mtracks indicates ave good isomers observed.
+    
     This is for data without isotope labeling. 
     Planing to use function report_khipu_statistics_from_labeled_data for labeled data.
     
-    Returns dict.
+    Returns stats_dict, good_khipus.
+
     '''
-    list_epds = json.load(open(json_epd_file))
+    list_epds = list(json.load(open(json_epd_file)).values())
     num_features, num_good_features = 0, 0
     for epd in list_epds:
         for f in epd["MS1_pseudo_Spectra"]:
@@ -36,17 +40,27 @@ def report_khipu_statistics(json_epd_file, snr=5, shape=0.9, natural_ratio_limit
                 num_good_features += 1
     
     khipus_isopairs, num_isopair_mtracks, good_khipus = get_isopairs_good_khipus(list_epds, natural_ratio_limit)
-
-    # M0 must be always the first item in MS1_pseudo_Spectra
-    return {
+    num_empcpds = len(list_epds)
+    num_singletons = count_singletons(list_epds)
+    num_good_khipus = len(good_khipus)
+    if num_isopair_mtracks:
+        ratio_good_khipus_mtracks = num_good_khipus/num_isopair_mtracks
+    else:
+        ratio_good_khipus_mtracks = None
+    
+    stats_dict = {
         'num_features': num_features,
         'num_good_features': num_good_features,
-        'num_empcpds': len(list_epds),
+        'num_empcpds': num_empcpds,
+        'num_khipus': num_empcpds - num_singletons,
+        'num_singletons': num_singletons,
         'num_khipus_isopairs': len(khipus_isopairs),
+        'num_good_khipus': num_good_khipus,
         'num_isopair_mtracks': num_isopair_mtracks,
-        'num_good_khipus': len(good_khipus),
-        'num_singletons': count_singletons(list_epds),
+        'ratio_good_khipus_mtracks': ratio_good_khipus_mtracks
     }
+    
+    return stats_dict, good_khipus
 
 
 def report_khipu_statistics_from_labeled_data(isotope_labeling_ratio=1.2):
@@ -81,7 +95,7 @@ def get_feature_stats_per_table(infile, snr=5, shape=0.9, sep='\t'):
     return num_features, num_good_features
     
 
-def check_good_peak(peak, snr=5, shape=0.9, area=1e100):
+def check_good_peak(peak, snr=5, shape=0.9, area=0):
     '''
     Decide if peak is good quality based on SNR and peak shape.
     Not using peak area by default value.
@@ -92,9 +106,13 @@ def check_good_peak(peak, snr=5, shape=0.9, area=1e100):
         return False
 
 
-def report_pathway_coverage_from_gem(model, list_epds, outfile):
+def report_pathway_coverage_from_gem(model, list_neutral_epds, outfile):
     '''
     This writes a report outfile and returns metabolic_pathways
+    One can choose to use all neutral epds or only good epds.
+    e.g. 
+    stats_dict, good_khipus = report_khipu_statistics(json_epd_file, snr=5, shape=0.9, natural_ratio_limit=0.5)
+    neutrals = get_neutrals( good_khipus )
     
     model is the JSON GEM model, e.g.
     model = json.load(open('metabolicModel_az_HumanGEM_20220302_noCompartmentalization.json'))
@@ -104,7 +122,7 @@ def report_pathway_coverage_from_gem(model, list_epds, outfile):
     report_pathway_coverage modifies the pathways - thus pathways are reloaded here everytime.
     '''
     mcgmodel = convert_json_model(model)
-    metabolic_pathways = report_pathway_coverage_from_neutrals( mcgmodel, list_epds)
+    metabolic_pathways = report_pathway_coverage_from_neutrals( mcgmodel, list_neutral_epds)
     export_pathway_coverage_table(metabolic_pathways, outfile)
     return metabolic_pathways
 
@@ -227,15 +245,31 @@ def wrapper_file2coverage(json_model, epd_json_file,
     '''
     There are functions handling empCpd filtering in report_pathway_coverage.
     They are preferred to be done explicitly outside this.
-    
-    
-    
-    
-    
-    
+    See report_pathway_coverage_from_gem
     '''
     list_epds = load_epds_from_json(epd_json_file)
     mcg_model = convert_json_model(json_model)
     metabolic_pathways = report_pathway_coverage(
         mcg_model, list_epds, neutral_formula_mass, multiple_ions, ppm)
     export_pathway_coverage_table(metabolic_pathways, outfile)
+
+
+
+
+#
+# ------------ test ---------------
+#
+
+if __name__ == "__main__":
+    
+    model = json.load(open('/Users/lish/li.proj/ipsc_atlas/metabolicModel_az_HumanGEM_20220302_noCompartmentalization.json'))
+      
+    t = '/Users/lish/li.workspace/MT_AML_13C/mzML_HILICneg_20240318_THP1_MOLM13_asari_project_32693656/Annotated_empiricalCompounds.json'
+    stats_dict, good_khipus = report_khipu_statistics(t, snr=5, shape=0.9, natural_ratio_limit=0.5)
+    neutrals = get_neutrals( good_khipus )
+    print("\n\n~~~~~~~~~ num good neutrals ~~~~~~~~~~\n\n")
+    print(len(neutrals))
+    print(stats_dict)
+    
+    report_pathway_coverage_from_gem(model, neutrals, outfile='test_jms_coverage.tsv')
+    

@@ -238,15 +238,19 @@ def get_isopairs_good_khipus(list_empCpds, natural_ratio_limit=0.5):
     '''
     isopair_empCpds_ids, isopair_mtracks, good_khipus = [], [], []
     for epd in list_empCpds:
-        # interim_id = v['interim_id']
-        M0, M1 = get_M0(epd['MS1_pseudo_Spectra']), get_M1(epd['MS1_pseudo_Spectra'])
-        if M0 and M1:
-            if float(M1['representative_intensity'])/(1 + float(M0['representative_intensity'])) < natural_ratio_limit:
-                isopair_empCpds_ids.append( epd['interim_id'] )
-                if epd["MS1_pseudo_Spectra"][0]['is_good_peak']:
-                    good_khipus.append( epd )
-                    isopair_mtracks.append( epd["MS1_pseudo_Spectra"][0]['parent_masstrack_id'] )
-
+        if len(epd['MS1_pseudo_Spectra']) > 1:
+            try:
+                M0, M1 = get_M0(epd['MS1_pseudo_Spectra']), get_M1(epd['MS1_pseudo_Spectra'])
+                feature_M0 = [f for f in epd['MS1_pseudo_Spectra'] if f['isotope']=='M0'][0]
+                if M0 and M1:
+                    if float(M1['representative_intensity'])/(1 + float(M0['representative_intensity'])) < natural_ratio_limit:
+                        isopair_empCpds_ids.append( epd['interim_id'] )
+                        if feature_M0['is_good_peak']:
+                            good_khipus.append( epd )
+                            isopair_mtracks.append( epd["MS1_pseudo_Spectra"][0]['parent_masstrack_id'] )
+            except KeyError:
+                print(epd['interim_id'])
+                
     return isopair_empCpds_ids, len(set(isopair_mtracks)), good_khipus
     
     
