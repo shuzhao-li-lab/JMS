@@ -62,7 +62,7 @@ def read_table_to_peaks(infile,
     for ii, entry in enumerate(ft):
         values = entry.split(delimiter)
         if max_col and not full_extract:
-            values = line[:max_col]
+            values = values[:max_col]
         mz, rt = float(values[mz_col]), float(values[rtime_col])
         fid = values[feature_id].strip() if feature_id is not None else _make_id(ii, mz, rt)
         representative_intensity = [float(x) for x in values[intensity[0]: intensity[1]]] if intensity else 0
