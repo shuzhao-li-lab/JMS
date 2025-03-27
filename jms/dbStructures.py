@@ -6,7 +6,7 @@ and to connect experimental data to empirical compounds.
 import json
 from operator import itemgetter
 import numpy as np
-
+import tqdm
 from khipu.epdsConstructor import epdsConstructor
 
 from khipu.utils import adduct_search_patterns, \
@@ -104,24 +104,19 @@ class knownCompoundDatabase:
         ======
         self.mass_indexed_compounds so that isomers are grouped under same empCpd.
         '''
-        _db = {}
+        from collections import defaultdict
+        _db = defaultdict(list)
         for cpd in list_compounds:
-            k = cpd['neutral_formula']+ '_' + str(round(float(cpd['neutral_formula_mass']),6))  
-            # ensuring unique formula and mass
-            if k in _db:  
-                _db[k].append( cpd )  
-            else:  
-                _db[k] = [cpd]  
-
-        for k,v in _db.items():
+            _db[cpd['neutral_formula'] + "_" + str(round(float(cpd['neutral_formula_mass']),6))].append(cpd)
+        for k, v in _db.items():
             self.mass_indexed_compounds[k] = {
-                    "interim_id": k,
-                    "neutral_formula": v[0]['neutral_formula'],
-                    "neutral_formula_mass": float(v[0]['neutral_formula_mass']),
-                    "compounds": v,
-                }
+                "interim_id": k,
+                "neutral_formula": v[0]['neutral_formula'],
+                "neutral_formula_mass": float(v[0]['neutral_formula_mass']),
+                "compounds": v
+            }
 
-    def build_emp_cpds_index(self, primary_only=True, include_C13=False):
+    def build_emp_cpds_index(self, primary_only=True, include_C13=True):
         '''
         For each emp_cpd, generate ion signatures common_adducts adducts (pos or neg ion mode).
         Then use build_centurion_tree function from .search to build index.
@@ -145,32 +140,23 @@ class knownCompoundDatabase:
         __ion_generator__ = compute_adducts_formulae
         if include_C13:
             __ion_generator__ = generate_ion_signature
-
-        pos_peak_list, neg_peak_list, neutral_peak_list = [], [], []
-        pos_epd_ions, neg_epd_ions = {}, {}     # dictionaries using same keys as self.mass_indexed_compounds
-        for k, v in self.mass_indexed_compounds.items():
-            # neutral
-            neutral_peak_list.append(
-                {'mz': v['neutral_formula_mass'], 'parent_epd_id': k, 'ion_relation': 'neutral',}
-            )
-
-            # do pos ions now
-            __LL = __ion_generator__(v['neutral_formula_mass'], v['neutral_formula'], mode='pos', primary_only=True)
-            # signature format e.g. [[304.203251, 'M[1+]', 'C19H28O3'], ...]
-            pos_epd_ions[k] = __LL
-            for ion in __LL:
-                pos_peak_list.append( {'mz': ion[0], 'parent_epd_id': k, 'ion_relation': ion[1],} )
-            
-            # do neg ions now
-            __LL = __ion_generator__(v['neutral_formula_mass'], v['neutral_formula'], mode='neg', primary_only=True)
-            neg_epd_ions[k] = __LL
-            for ion in __LL:
-                neg_peak_list.append( {'mz': ion[0], 'parent_epd_id': k, 'ion_relation': ion[1],} )
-
-        # map peaks -> empCpd
-        self.emp_cpds_trees['pos'] = build_centurion_tree(pos_peak_list)
-        self.emp_cpds_trees['neg'] = build_centurion_tree(neg_peak_list)
-        self.emp_cpds_trees['neutral'] = build_centurion_tree(neutral_peak_list)
+        
+        peak_lists = {"pos": [], "neg": [], "neutral": []}
+        for k, v in tqdm.tqdm(self.mass_indexed_compounds.items()):
+            peak = {a: b for a, b in v.items()}
+            peak['mz'] = v['neutral_formula_mass']
+            peak['parent_epd_id'] = k
+            peak['ion_relation'] = 'neutral'
+            peak_lists['neutral'].append(peak)
+            for mode in ["pos", "neg"]:
+                for ion in __ion_generator__(v['neutral_formula_mass'], v['neutral_formula'], mode=mode, primary_only=primary_only):
+                    ion_peak = dict(peak)
+                    ion_peak['mz'] = ion[0]
+                    ion_peak['ion_relation'] = ion[1]
+                    if "order" in ion:
+                        ion_peak["order"]: ion[3]
+                    peak_lists[mode].append(ion_peak)
+        self.emp_cpds_trees = {k: build_centurion_tree(v) for k, v in peak_lists.items()}
 
     def search_mz_single(self, query_mz, mode='pos', mz_tolerance_ppm=5):
         '''
@@ -556,8 +542,6 @@ class ExperimentalEcpdDatabase:
     def singleton_formula_search(self, KCD):
         '''
         Search singletons for formulae first by KCD search then .data.formula_tree.
-        Allowing flexible M0 adducts provided in KCD.
-        
         KCD: knownCompoundDatabase instance.
 
         Returns
@@ -574,7 +558,7 @@ class ExperimentalEcpdDatabase:
             if list_matches:
                 # take 1st match only here; will model better in future
                 _epd = KCD.mass_indexed_compounds[list_matches[0]['parent_epd_id']]
-                _epd['isotope'] = 'M0'
+                _epd['isotope'] = '13C/12C'
                 _epd['ion_relation'] = _epd['modification'] = list_matches[0]['ion_relation']
                 found.append((p, _epd))
             else:
@@ -633,7 +617,7 @@ class ExperimentalEcpdDatabase:
                                                   P['id_number'] not in found_peaks]
         peakTree = build_centurion_tree(peakList)
 
-        new_id_start = len(self.dict_empCpds)
+        new_id_start = len(self.dict_empCpds) + 10000
         for formula, PP in formula_to_peaks.items():
             neutral_formula_mass = PP[0][1]['neutral_formula_mass']
             P1 = self.dict_peaks[PP[0][0]]
@@ -645,8 +629,7 @@ class ExperimentalEcpdDatabase:
                 else:
                     # not coeluted, new empCpd
                     new_id_start += 1
-                    interim_id = '_singleton_' + str(new_id_start)
-                    self.dict_empCpds[interim_id] = {'interim_id': interim_id,
+                    self.dict_empCpds[new_id_start] = {'interim_id': str(new_id_start),
                             'neutral_formula_mass': neutral_formula_mass, 'neutral_formula': formula,
                             'MS1_pseudo_Spectra': self.__extend_peakList__(
                                 formula, neutral_formula_mass, tmp, peakTree, self.mz_tolerance_ppm),
@@ -654,7 +637,7 @@ class ExperimentalEcpdDatabase:
                     tmp = [_P, ]
 
             new_id_start += 1
-            self.dict_empCpds[new_id_start] = {'interim_id': '_singleton_' + str(new_id_start),
+            self.dict_empCpds[new_id_start] = {'interim_id': str(new_id_start),
                     'neutral_formula_mass': neutral_formula_mass, 'neutral_formula': formula,
                     'MS1_pseudo_Spectra': self.__extend_peakList__(
                                 formula, neutral_formula_mass, tmp, peakTree, self.mz_tolerance_ppm),
